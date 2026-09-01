@@ -53,7 +53,7 @@ export default function Layout() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-            <h1 className="text-xl font-bold text-foreground">Jarvis AI</h1>
+            <h1 className="text-xl font-bold text-foreground">Aurexis AI</h1>
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden p-2 rounded-md hover:bg-accent"

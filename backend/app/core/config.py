@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
     # Application
-    APP_NAME: str = "Jarvis AI"
+    APP_NAME: str = "Aurexis AI"
     APP_ENV: str = "development"
     APP_DEBUG: bool = False
     APP_VERSION: str = "1.0.0"
@@ -141,7 +141,7 @@ class Settings(BaseSettings):
     SENTRY_ENVIRONMENT: str = "development"
     SENTRY_TRACES_SAMPLE_RATE: float = 1.0
     OTEL_ENABLED: bool = True
-    OTEL_SERVICE_NAME: str = "jarvis-backend"
+    OTEL_SERVICE_NAME: str = "aurexis-backend"
     OTEL_EXPORTER_OTLP_ENDPOINT: Optional[str] = None
 
     # Email
@@ -149,7 +149,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
-    SMTP_FROM: str = "noreply@jarvis-ai.com"
+    SMTP_FROM: str = "noreply@aurexis-ai.com"
     SMTP_TLS: bool = True
 
     # OAuth2
@@ -187,7 +187,7 @@ class Settings(BaseSettings):
     
     # Wake Word
     WAKE_WORD_ENABLED: bool = True
-    WAKE_WORD_PHRASE: str = "hey jarvis"
+    WAKE_WORD_PHRASE: str = "hey aurexis"
     WAKE_WORD_SENSITIVITY: float = 0.5
     WAKE_WORD_MODEL: str = "porcupine"
 
@@ -238,7 +238,7 @@ class Settings(BaseSettings):
     VISION_OBJECT_DETECTION_CONFIDENCE: float = 0.5
 
     # Admin
-    ADMIN_EMAIL: str = "admin@jarvis-ai.com"
+    ADMIN_EMAIL: str = "admin@aurexis-ai.com"
     ADMIN_PASSWORD: str = ""
 
     def model_post_init(self, __context: Any) -> None:

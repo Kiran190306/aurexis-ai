@@ -44,7 +44,7 @@ logger.add(
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan context manager for startup and shutdown events."""
     # Startup
-    logger.info("Starting Jarvis AI Backend...")
+    logger.info("Starting Aurexis AI Backend...")
     
     # Only call init_db() in development/testing mode
     # Production schema must be managed via Alembic migrations
@@ -57,14 +57,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await initialize_ai_engine()
     app.state.ai_engine_ready = True
     logger.info("AI Engine initialized")
-    logger.info("Jarvis AI Backend started successfully")
+    logger.info("Aurexis AI Backend started successfully")
     yield
     # Shutdown
-    logger.info("Shutting down Jarvis AI Backend...")
+    logger.info("Shutting down Aurexis AI Backend...")
     await close_db()
     shutdown_tracing(app)
     logger.info("Database connections closed")
-    logger.info("Jarvis AI Backend stopped")
+    logger.info("Aurexis AI Backend stopped")
 
 
 # Create FastAPI application
@@ -184,7 +184,7 @@ async def readiness_check() -> JSONResponse:
 async def root() -> dict[str, str]:
     """Root endpoint."""
     return {
-        "message": "Welcome to Jarvis AI API",
+        "message": "Welcome to Aurexis AI API",
         "version": settings.APP_VERSION,
         "docs": "/docs",
     }

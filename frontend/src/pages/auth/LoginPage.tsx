@@ -31,7 +31,7 @@ export default function LoginPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to your Jarvis AI account
+            Sign in to your Aurexis AI account
           </p>
         </div>
 

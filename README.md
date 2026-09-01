@@ -1,4 +1,4 @@
-# Jarvis AI - Enterprise AI Agent Platform
+# Aurexis AI - Enterprise AI Agent Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
@@ -7,7 +7,7 @@
 
 ## Overview
 
-Jarvis AI is an enterprise-grade AI Operating System capable of reasoning, planning, using tools, remembering conversations, browsing the internet, generating code, understanding files, analyzing images, speaking with users, and automating tasks.
+Aurexis AI is an enterprise-grade AI Operating System capable of reasoning, planning, using tools, remembering conversations, browsing the internet, generating code, understanding files, analyzing images, speaking with users, and automating tasks.
 
 ## Features
 
@@ -40,7 +40,7 @@ Jarvis AI is an enterprise-grade AI Operating System capable of reasoning, plann
 
 ## Architecture
 
-Jarvis AI follows a modular, microservices-oriented architecture:
+Aurexis AI follows a modular, microservices-oriented architecture:
 
 - **Backend**: Python FastAPI with async support
 - **Frontend**: React 18 with TypeScript and Vite
@@ -67,8 +67,8 @@ For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/your-org/jarvis-ai.git
-cd jarvis-ai
+git clone https://github.com/your-org/aurexis-ai.git
+cd aurexis-ai
 ```
 
 2. **Backend Setup**
@@ -123,7 +123,7 @@ docker-compose down
 ## Project Structure
 
 ```
-jarvis-ai/
+aurexis-ai/
 ├── backend/              # Python FastAPI backend
 ├── frontend/            # React TypeScript frontend
 ├── desktop-app/         # Electron desktop application
@@ -306,8 +306,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - Documentation: [docs/](docs/)
-- Issues: [GitHub Issues](https://github.com/your-org/jarvis-ai/issues)
-- Discussions: [GitHub Discussions](https://github.com/your-org/jarvis-ai/discussions)
+- Issues: [GitHub Issues](https://github.com/your-org/aurexis-ai/issues)
+- Discussions: [GitHub Discussions](https://github.com/your-org/aurexis-ai/discussions)
 
 ## Roadmap
 
@@ -346,6 +346,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-- Email: contact@jarvis-ai.com
-- Twitter: @jarvis_ai
-- Discord: [Join our server](https://discord.gg/jarvis-ai)
+- Email: contact@aurexis-ai.com
+- Twitter: @aurexis_ai
+- Discord: [Join our server](https://discord.gg/aurexis-ai)

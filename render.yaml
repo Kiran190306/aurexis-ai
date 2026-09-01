@@ -1,7 +1,7 @@
 services:
   # Frontend Web Service
   - type: web
-    name: jarvis-frontend
+    name: aurexis-frontend
     plan: starter # Can be upgraded to standard/pro
     buildCommand: npm install && npm run build
     startCommand: nginx -g daemon off;
@@ -14,7 +14,7 @@ services:
 
   # Backend Web Service
   - type: web
-    name: jarvis-backend
+    name: aurexis-backend
     env: python
     plan: standard # Can be upgraded to pro
     buildCommand: pip install -r requirements.txt
@@ -36,12 +36,12 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: jarvis-redis
+          name: aurexis-redis
           property: connectionString
       - key: REDIS_PASSWORD
         fromService:
           type: redis
-          name: jarvis-redis
+          name: aurexis-redis
           property: password
       - key: CELERY_BROKER_URL
         generateValue: true # Will be set via script or manual
@@ -64,7 +64,7 @@ services:
 
   # Celery Worker Service
   - type: worker
-    name: jarvis-celery-worker
+    name: aurexis-celery-worker
     env: python
     plan: standard
     buildCommand: pip install -r requirements.txt
@@ -81,12 +81,12 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: jarvis-redis
+          name: aurexis-redis
           property: connectionString
       - key: REDIS_PASSWORD
         fromService:
           type: redis
-          name: jarvis-redis
+          name: aurexis-redis
           property: password
       - key: CELERY_BROKER_URL
         generateValue: true
@@ -105,7 +105,7 @@ services:
 
   # Celery Beat Service
   - type: worker
-    name: jarvis-celery-beat
+    name: aurexis-celery-beat
     env: python
     plan: starter # Can use smaller instance
     buildCommand: pip install -r requirements.txt
@@ -122,12 +122,12 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: jarvis-redis
+          name: aurexis-redis
           property: connectionString
       - key: REDIS_PASSWORD
         fromService:
           type: redis
-          name: jarvis-redis
+          name: aurexis-redis
           property: password
       - key: CELERY_BROKER_URL
         generateValue: true
@@ -146,7 +146,7 @@ services:
 
   # Migration Job (One-time - manual trigger)
   - type: cron
-    name: jarvis-migrations
+    name: aurexis-migrations
     env: python
     plan: starter
     buildCommand: pip install -r requirements.txt
@@ -172,7 +172,7 @@ databases:
 
 # Redis (Render Managed)
 redis:
-  - name: jarvis-redis
+  - name: aurexis-redis
     plan: standard # Can be upgraded to pro
     maxmemoryPolicy: allkeys-lru
     # Render Redis is private by default, no ipallow needed
