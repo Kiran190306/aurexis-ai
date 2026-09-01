@@ -1,0 +1,7 @@
+EPIC-015 RAG Test Document
+
+This document contains the unique identifier ORION-RAG-92841 which is used for end-to-end validation testing.
+
+The Jarvis RAG integration project codename is ORION-RAG-92841.
+
+This is a deterministic test document for verifying RAG query grounding and citation generation.

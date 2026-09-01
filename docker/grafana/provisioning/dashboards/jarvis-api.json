@@ -1,0 +1,26 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "panels": [
+    {
+      "title": "Request rate", "type": "timeseries",
+      "targets": [{"expr": "sum(rate(jarvis_http_requests_total[5m]))", "legendFormat": "requests/s"}],
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "title": "5xx error rate", "type": "timeseries",
+      "targets": [{"expr": "sum(rate(jarvis_http_requests_total{status_code=~\"5..\"}[5m])) / clamp_min(sum(rate(jarvis_http_requests_total[5m])), 0.001)", "legendFormat": "5xx ratio"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    },
+    {
+      "title": "p95 request latency", "type": "timeseries",
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(jarvis_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95"}],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}, "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["jarvis", "api"],
+  "title": "Jarvis API Overview",
+  "uid": "jarvis-api-overview",
+  "version": 1
+}

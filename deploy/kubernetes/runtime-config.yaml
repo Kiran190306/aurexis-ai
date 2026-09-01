@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jarvis-runtime-config
+data:
+  APP_ENV: production
+  LOG_FORMAT: json
+  OTEL_ENABLED: "true"
+  OTEL_SERVICE_NAME: jarvis-backend

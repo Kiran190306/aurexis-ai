@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jarvis-redis
+  labels:
+    app: jarvis-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jarvis-redis
+  template:
+    metadata:
+      labels:
+        app: jarvis-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server", "--appendonly", "yes"]
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jarvis-redis
+spec:
+  selector:
+    app: jarvis-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

@@ -1,0 +1,216 @@
+name: jarvis-production-validation
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
+    volumes:
+      - postgres_data_validation:/var/lib/postgresql/data
+    # Port removed for security - PostgreSQL now internal only
+    # ports: ["5434:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    networks: [jarvis-network]
+
+  redis:
+    image: redis:7-alpine
+    command: >
+      sh -c "redis-server
+      --appendonly yes
+      --requirepass $${REDIS_PASSWORD}
+      --bind 0.0.0.0"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    volumes:
+      - redis_data_validation:/data
+    # Port removed for security - Redis now internal only
+    # ports: ["6381:6379"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli -a $${REDIS_PASSWORD} ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    networks: [jarvis-network]
+
+  migrations:
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/docker/backend/Dockerfile
+      target: runtime
+    environment: &backend-environment
+      APP_ENV: production
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      LOG_FORMAT: json
+      OTEL_SERVICE_NAME: jarvis-backend
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+    networks: [jarvis-network]
+
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/docker/backend/Dockerfile
+      target: runtime
+    environment: *backend-environment
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrations: {condition: service_completed_successfully}
+    ports: ["8002:8000"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    networks: [jarvis-network]
+
+  celery-worker:
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/docker/backend/Dockerfile
+      target: runtime
+    environment: &celery-environment
+      APP_ENV: production
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/2
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      LOG_FORMAT: json
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.worker", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    command: celery -A app.worker worker --loglevel=info
+    networks: [jarvis-network]
+
+  celery-beat:
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/docker/backend/Dockerfile
+      target: runtime
+    environment: *celery-environment
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.worker", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    command: celery -A app.worker beat --loglevel=info
+    networks: [jarvis-network]
+
+  flower:
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/docker/backend/Dockerfile
+      target: runtime
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/2
+    depends_on:
+      redis: {condition: service_healthy}
+      backend: {condition: service_healthy}
+    ports: ["5557:5555"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    command: celery -A app.worker flower --port=5555
+    networks: [jarvis-network]
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: ../deploy/docker/frontend/Dockerfile
+    depends_on:
+      backend: {condition: service_healthy}
+    ports: ["8081:80"]
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+    networks: [jarvis-network]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=15d"]
+    volumes:
+      - ../../docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data_validation:/prometheus
+    ports: ["9092:9090"]
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+    networks: [jarvis-network]
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ../../docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data_validation:/var/lib/grafana
+    ports: ["3003:3000"]
+    depends_on: [prometheus]
+    restart: unless-stopped
+    networks: [jarvis-network]
+
+  audit:
+    profiles: [audit]
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/docker/backend/Dockerfile
+      target: audit
+    volumes:
+      - ../../reports:/reports
+
+volumes:
+  postgres_data_validation: {}
+  redis_data_validation: {}
+  prometheus_data_validation: {}
+  grafana_data_validation: {}
+
+networks:
+  jarvis-network:
+    driver: bridge

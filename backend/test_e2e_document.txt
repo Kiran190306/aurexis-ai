@@ -1,0 +1,5 @@
+JARVIS_E2E_FACT_92841: The Jarvis RAG integration project codename is ORION-RAG-92841.
+
+This is a test document for EPIC-015 end-to-end validation. The document contains a single deterministic fact that will be used to verify RAG query grounding.
+
+The Jarvis RAG integration project is codenamed ORION-RAG-92841. This codename should be retrieved when querying about the project codename.

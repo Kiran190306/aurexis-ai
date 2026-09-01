@@ -1,0 +1,11 @@
+JARVIS_E2E_FACT_92841:
+The Jarvis RAG integration project codename is ORION-RAG-92841.
+
+This is a test document for EPIC-015 authentication and Knowledge API E2E validation.
+The document contains a deterministic fact that should be retrievable through the RAG pipeline.
+
+Additional context:
+- The project uses PostgreSQL with pgvector for vector storage
+- Redis is used for embedding cache
+- The RAG pipeline includes chunking, embedding, vector search, reranking, and context building
+- Knowledge Agent processes queries with retrieved context
