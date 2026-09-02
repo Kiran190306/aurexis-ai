@@ -278,5 +278,23 @@ class ScreenshotAnalyzer:
         return ", ".join(summary_parts)
 
 
-# Global screenshot analyzer instance
-screenshot_analyzer = ScreenshotAnalyzer()
+# Lazy-loaded screenshot analyzer singleton
+_screenshot_analyzer_instance: Optional[ScreenshotAnalyzer] = None
+
+
+def get_screenshot_analyzer() -> ScreenshotAnalyzer:
+    """Get or create the screenshot analyzer instance (lazy-loaded)."""
+    global _screenshot_analyzer_instance
+    if _screenshot_analyzer_instance is None:
+        _screenshot_analyzer_instance = ScreenshotAnalyzer()
+    return _screenshot_analyzer_instance
+
+
+# Backward compatibility: allow importing screenshot_analyzer directly
+class _ScreenshotAnalyzerProxy:
+    """Proxy for lazy-loaded screenshot analyzer."""
+    def __getattr__(self, name: str) -> Any:
+        return getattr(get_screenshot_analyzer(), name)
+
+
+screenshot_analyzer = _ScreenshotAnalyzerProxy()

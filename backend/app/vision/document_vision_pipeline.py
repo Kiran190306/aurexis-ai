@@ -306,5 +306,23 @@ class DocumentVisionPipeline:
             }
 
 
-# Global document vision pipeline instance
-document_vision_pipeline = DocumentVisionPipeline()
+# Lazy-loaded document vision pipeline singleton
+_document_vision_pipeline_instance: Optional[DocumentVisionPipeline] = None
+
+
+def get_document_vision_pipeline() -> DocumentVisionPipeline:
+    """Get or create the document vision pipeline instance (lazy-loaded)."""
+    global _document_vision_pipeline_instance
+    if _document_vision_pipeline_instance is None:
+        _document_vision_pipeline_instance = DocumentVisionPipeline()
+    return _document_vision_pipeline_instance
+
+
+# Backward compatibility: allow importing document_vision_pipeline directly
+class _DocumentVisionPipelineProxy:
+    """Proxy for lazy-loaded document vision pipeline."""
+    def __getattr__(self, name: str) -> Any:
+        return getattr(get_document_vision_pipeline(), name)
+
+
+document_vision_pipeline = _DocumentVisionPipelineProxy()

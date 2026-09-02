@@ -201,5 +201,23 @@ class VisionService:
         }
 
 
-# Global vision service instance
-vision_service = VisionService()
+# Lazy-loaded vision service singleton
+_vision_service_instance: Optional[VisionService] = None
+
+
+def get_vision_service() -> VisionService:
+    """Get or create the vision service instance (lazy-loaded)."""
+    global _vision_service_instance
+    if _vision_service_instance is None:
+        _vision_service_instance = VisionService()
+    return _vision_service_instance
+
+
+# Backward compatibility: allow importing vision_service directly
+class _VisionServiceProxy:
+    """Proxy for lazy-loaded vision service."""
+    def __getattr__(self, name: str) -> Any:
+        return getattr(get_vision_service(), name)
+
+
+vision_service = _VisionServiceProxy()

@@ -1,7 +1,7 @@
 """
 OCRService - Optical Character Recognition service using Tesseract.
 """
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Any as AnyType
 from PIL import Image
 import io
 import pytesseract
@@ -249,5 +249,24 @@ class OCRService:
             return False
 
 
-# Global OCR service instance
-ocr_service = OCRService()
+# Lazy-loaded OCR service singleton
+_ocr_service_instance: Optional[OCRService] = None
+
+
+def get_ocr_service() -> OCRService:
+    """Get or create the OCR service instance (lazy-loaded)."""
+    global _ocr_service_instance
+    if _ocr_service_instance is None:
+        _ocr_service_instance = OCRService()
+    return _ocr_service_instance
+
+
+# Backward compatibility: allow importing ocr_service directly
+# This will trigger lazy initialization on first access
+class _OCRServiceProxy:
+    """Proxy for lazy-loaded OCR service."""
+    def __getattr__(self, name: str) -> AnyType:
+        return getattr(get_ocr_service(), name)
+
+
+ocr_service = _OCRServiceProxy()
