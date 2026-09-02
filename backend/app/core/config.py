@@ -262,6 +262,28 @@ class Settings(BaseSettings):
             return [v]
         return v
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Normalize PostgreSQL URL to use asyncpg driver for async SQLAlchemy."""
+        if not v:
+            return v
+
+        # Replace postgres:// with postgresql+asyncpg://
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+asyncpg://", 1)
+
+        # Replace postgresql:// with postgresql+asyncpg://
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        # Replace postgresql+psycopg2:// with postgresql+asyncpg://
+        if v.startswith("postgresql+psycopg2://"):
+            return v.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+
+        # Already has asyncpg or is a different database (SQLite, etc.)
+        return v
+
     def model_post_init(self, __context: Any) -> None:
         if self.APP_ENV == "production" and not self.SECRET_KEY:
             raise ValueError("SECRET_KEY must be set in production")

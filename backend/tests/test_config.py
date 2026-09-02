@@ -77,3 +77,33 @@ class TestSettingsParsing:
         settings = Settings(APP_ENV="development")
         assert settings.ALLOWED_HOSTS == ["localhost", "127.0.0.1", "0.0.0.0"]
         assert settings.CORS_ORIGINS == ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080"]
+
+    def test_database_url_postgres_to_asyncpg(self):
+        """Test DATABASE_URL normalization: postgres:// -> postgresql+asyncpg://"""
+        settings = Settings(DATABASE_URL="postgres://user:pass@localhost:5432/db")
+        assert settings.DATABASE_URL == "postgresql+asyncpg://user:pass@localhost:5432/db"
+
+    def test_database_url_postgresql_to_asyncpg(self):
+        """Test DATABASE_URL normalization: postgresql:// -> postgresql+asyncpg://"""
+        settings = Settings(DATABASE_URL="postgresql://user:pass@localhost:5432/db")
+        assert settings.DATABASE_URL == "postgresql+asyncpg://user:pass@localhost:5432/db"
+
+    def test_database_url_psycopg2_to_asyncpg(self):
+        """Test DATABASE_URL normalization: postgresql+psycopg2:// -> postgresql+asyncpg://"""
+        settings = Settings(DATABASE_URL="postgresql+psycopg2://user:pass@localhost:5432/db")
+        assert settings.DATABASE_URL == "postgresql+asyncpg://user:pass@localhost:5432/db"
+
+    def test_database_url_asyncpg_unchanged(self):
+        """Test DATABASE_URL normalization: postgresql+asyncpg:// remains unchanged"""
+        settings = Settings(DATABASE_URL="postgresql+asyncpg://user:pass@localhost:5432/db")
+        assert settings.DATABASE_URL == "postgresql+asyncpg://user:pass@localhost:5432/db"
+
+    def test_database_url_sqlite_unchanged(self):
+        """Test DATABASE_URL normalization: SQLite URLs remain unchanged"""
+        settings = Settings(DATABASE_URL="sqlite:///./test.db")
+        assert settings.DATABASE_URL == "sqlite:///./test.db"
+
+    def test_database_url_render_scenario(self):
+        """Test DATABASE_URL normalization for Render fromDatabase connectionString"""
+        settings = Settings(DATABASE_URL="postgres://jarvis:password@host:5432/jarvis")
+        assert settings.DATABASE_URL == "postgresql+asyncpg://jarvis:password@host:5432/jarvis"
