@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 from functools import lru_cache
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     APP_URL: str = "http://localhost:8000"
     API_V1_PREFIX: str = "/api/v1"
-    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0"]
+    ALLOWED_HOSTS: Union[List[str], str] = ["localhost", "127.0.0.1", "0.0.0.0"]
 
     # Server
     HOST: str = "0.0.0.0"
@@ -40,7 +41,7 @@ class Settings(BaseSettings):
     PASSWORD_MIN_LENGTH: int = 8
 
     # CORS
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8080"
@@ -240,6 +241,26 @@ class Settings(BaseSettings):
     # Admin
     ADMIN_EMAIL: str = "admin@aurexis-ai.com"
     ADMIN_PASSWORD: str = ""
+
+    @field_validator("ALLOWED_HOSTS", mode="before")
+    @classmethod
+    def parse_allowed_hosts(cls, v: Union[List[str], str]) -> List[str]:
+        if isinstance(v, str):
+            # Handle comma-separated string or single hostname
+            if "," in v:
+                return [host.strip() for host in v.split(",")]
+            return [v]
+        return v
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Union[List[str], str]) -> List[str]:
+        if isinstance(v, str):
+            # Handle comma-separated string or single origin
+            if "," in v:
+                return [origin.strip() for origin in v.split(",")]
+            return [v]
+        return v
 
     def model_post_init(self, __context: Any) -> None:
         if self.APP_ENV == "production" and not self.SECRET_KEY:
