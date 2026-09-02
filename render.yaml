@@ -9,7 +9,10 @@ services:
     healthCheckPath: /health
     envVars:
       - key: VITE_API_URL
-        sync: false # Set manually to backend URL (e.g., https://aurexis-backend.onrender.com)
+        fromService:
+          type: web
+          name: aurexis-backend
+          envVarKey: RENDER_EXTERNAL_URL
 
   # Backend Web Service
   - type: web
@@ -45,9 +48,15 @@ services:
       - key: GOOGLE_API_KEY
         sync: false
       - key: CORS_ORIGINS
-        sync: false # Set to frontend URL (e.g., https://aurexis-frontend.onrender.com)
+        fromService:
+          type: web
+          name: aurexis-frontend
+          envVarKey: RENDER_EXTERNAL_URL
       - key: ALLOWED_HOSTS
-        sync: false # Set to backend URL (e.g., aurexis-backend.onrender.com)
+        fromService:
+          type: web
+          name: aurexis-backend
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
 
   # Key Value Service (Redis-compatible)
   - type: keyvalue
