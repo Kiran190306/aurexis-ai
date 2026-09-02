@@ -2,7 +2,7 @@ services:
   # Frontend Web Service
   - type: web
     name: aurexis-frontend
-    plan: starter
+    plan: free
     runtime: docker
     dockerfilePath: ./deploy/docker/frontend/Dockerfile
     dockerContext: ./frontend
@@ -14,12 +14,11 @@ services:
   # Backend Web Service
   - type: web
     name: aurexis-backend
-    plan: standard
+    plan: free
     runtime: docker
     dockerfilePath: ./deploy/docker/backend/Dockerfile
     dockerContext: ./backend
     dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    preDeployCommand: alembic upgrade head
     healthCheckPath: /health/ready
     envVars:
       - key: APP_ENV
@@ -31,16 +30,6 @@ services:
           name: aurexis-postgres
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
         fromService:
           type: keyvalue
           name: aurexis-redis
@@ -60,122 +49,10 @@ services:
       - key: ALLOWED_HOSTS
         sync: false # Set to backend URL (e.g., aurexis-backend.onrender.com)
 
-  # Celery Worker Service
-  - type: worker
-    name: aurexis-celery-worker
-    plan: standard
-    runtime: docker
-    dockerfilePath: ./deploy/docker/backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: celery -A app.worker worker --loglevel=info
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: aurexis-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: SECRET_KEY
-      - key: ADMIN_PASSWORD
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: ADMIN_PASSWORD
-      - key: OPENAI_API_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: OPENAI_API_KEY
-      - key: ANTHROPIC_API_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: ANTHROPIC_API_KEY
-      - key: GOOGLE_API_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: GOOGLE_API_KEY
-
-  # Celery Beat Service
-  - type: worker
-    name: aurexis-celery-beat
-    plan: starter
-    runtime: docker
-    dockerfilePath: ./deploy/docker/backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: celery -A app.worker beat --loglevel=info
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: aurexis-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: keyvalue
-          name: aurexis-redis
-          property: connectionString
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: SECRET_KEY
-      - key: ADMIN_PASSWORD
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: ADMIN_PASSWORD
-      - key: OPENAI_API_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: OPENAI_API_KEY
-      - key: ANTHROPIC_API_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: ANTHROPIC_API_KEY
-      - key: GOOGLE_API_KEY
-        fromService:
-          type: web
-          name: aurexis-backend
-          envVarKey: GOOGLE_API_KEY
-
   # Key Value Service (Redis-compatible)
   - type: keyvalue
     name: aurexis-redis
-    plan: standard
+    plan: free
     ipAllowList: []
     maxmemoryPolicy: allkeys-lru
 
@@ -184,6 +61,6 @@ databases:
   - name: aurexis-postgres
     databaseName: jarvis
     user: jarvis
-    plan: standard
+    plan: free
     # pgvector extension will be enabled via Alembic migration
     # Do not specify version in Blueprint - let migration handle it
