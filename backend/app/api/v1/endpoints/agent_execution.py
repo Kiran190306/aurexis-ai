@@ -35,20 +35,88 @@ from app.agents import (
 
 router = APIRouter()
 
-# Initialize agents
-planner = PlannerAgent()
-orchestrator = OrchestratorAgent()
-research_agent = ResearchAgent()
-coding_agent = CodingAgent()
-memory_agent = MemoryAgent()
-tool_agent = ToolAgent()
-reflection_agent = ReflectionAgent()
+# Lazy-loaded agent instances
+_planner: Optional[PlannerAgent] = None
+_orchestrator: Optional[OrchestratorAgent] = None
+_research_agent: Optional[ResearchAgent] = None
+_coding_agent: Optional[CodingAgent] = None
+_memory_agent: Optional[MemoryAgent] = None
+_tool_agent: Optional[ToolAgent] = None
+_reflection_agent: Optional[ReflectionAgent] = None
+_agents_initialized = False
 
-# Register agents with orchestrator
-orchestrator.register_agent(AgentRole.RESEARCH, research_agent.agent_id)
-orchestrator.register_agent(AgentRole.CODING, coding_agent.agent_id)
-orchestrator.register_agent(AgentRole.MEMORY, memory_agent.agent_id)
-orchestrator.register_agent(AgentRole.TOOL, tool_agent.agent_id)
+
+def _initialize_agents() -> None:
+    """Initialize agents lazily on first access."""
+    global _planner, _orchestrator, _research_agent, _coding_agent
+    global _memory_agent, _tool_agent, _reflection_agent, _agents_initialized
+
+    if _agents_initialized:
+        return
+    _planner = PlannerAgent()
+    _orchestrator = OrchestratorAgent()
+    _research_agent = ResearchAgent()
+    _coding_agent = CodingAgent()
+    _memory_agent = MemoryAgent()
+    _tool_agent = ToolAgent()
+    _reflection_agent = ReflectionAgent()
+
+    # Register agents with orchestrator
+    _orchestrator.register_agent(AgentRole.RESEARCH, _research_agent.agent_id)
+    _orchestrator.register_agent(AgentRole.CODING, _coding_agent.agent_id)
+    _orchestrator.register_agent(AgentRole.MEMORY, _memory_agent.agent_id)
+    _orchestrator.register_agent(AgentRole.TOOL, _tool_agent.agent_id)
+
+    _agents_initialized = True
+
+
+def get_planner() -> PlannerAgent:
+    """Get or create planner agent."""
+    _initialize_agents()
+    assert _planner is not None
+    return _planner
+
+
+def get_orchestrator() -> OrchestratorAgent:
+    """Get or create orchestrator agent."""
+    _initialize_agents()
+    assert _orchestrator is not None
+    return _orchestrator
+
+
+def get_research_agent() -> ResearchAgent:
+    """Get or create research agent."""
+    _initialize_agents()
+    assert _research_agent is not None
+    return _research_agent
+
+
+def get_coding_agent() -> CodingAgent:
+    """Get or create coding agent."""
+    _initialize_agents()
+    assert _coding_agent is not None
+    return _coding_agent
+
+
+def get_memory_agent() -> MemoryAgent:
+    """Get or create memory agent."""
+    _initialize_agents()
+    assert _memory_agent is not None
+    return _memory_agent
+
+
+def get_tool_agent() -> ToolAgent:
+    """Get or create tool agent."""
+    _initialize_agents()
+    assert _tool_agent is not None
+    return _tool_agent
+
+
+def get_reflection_agent() -> ReflectionAgent:
+    """Get or create reflection agent."""
+    _initialize_agents()
+    assert _reflection_agent is not None
+    return _reflection_agent
 
 
 @router.post("/execute", response_model=ExecutionResponse)
@@ -72,7 +140,7 @@ async def execute_agent_request(
             agent_role=AgentRole.PLANNER
         )
         
-        planner_response = await planner.execute(planner_task)
+        planner_response = await get_planner().execute(planner_task)
         
         if not planner_response.success:
             raise HTTPException(
@@ -319,13 +387,13 @@ async def cancel_execution_plan(
 async def get_agents_status() -> dict[str, Any]:
     """Get status of all agents."""
     return {
-        "planner": planner.get_status(),
-        "orchestrator": orchestrator.get_status(),
-        "research": research_agent.get_status(),
-        "coding": coding_agent.get_status(),
-        "memory": memory_agent.get_status(),
-        "tool": tool_agent.get_status(),
-        "reflection": reflection_agent.get_status(),
+        "planner": get_planner().get_status(),
+        "orchestrator": get_orchestrator().get_status(),
+        "research": get_research_agent().get_status(),
+        "coding": get_coding_agent().get_status(),
+        "memory": get_memory_agent().get_status(),
+        "tool": get_tool_agent().get_status(),
+        "reflection": get_reflection_agent().get_status(),
         "event_bus": event_bus.get_stats()
     }
 
@@ -334,11 +402,11 @@ async def get_agents_status() -> dict[str, Any]:
 async def get_agents_capabilities() -> dict[str, Any]:
     """Get capabilities of all agents."""
     return {
-        "planner": planner.get_capabilities(),
-        "orchestrator": orchestrator.get_capabilities(),
-        "research": research_agent.get_capabilities(),
-        "coding": coding_agent.get_capabilities(),
-        "memory": memory_agent.get_capabilities(),
-        "tool": tool_agent.get_capabilities(),
-        "reflection": reflection_agent.get_capabilities()
+        "planner": get_planner().get_capabilities(),
+        "orchestrator": get_orchestrator().get_capabilities(),
+        "research": get_research_agent().get_capabilities(),
+        "coding": get_coding_agent().get_capabilities(),
+        "memory": get_memory_agent().get_capabilities(),
+        "tool": get_tool_agent().get_capabilities(),
+        "reflection": get_reflection_agent().get_capabilities()
     }

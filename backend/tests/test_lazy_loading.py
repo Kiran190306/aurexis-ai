@@ -73,6 +73,53 @@ class TestLazyLoading:
         assert service is not None
         assert hasattr(service, 'supported_formats')
 
+    def test_embedding_pipeline_lazy_loading(self):
+        """Test EmbeddingPipeline is not initialized until first access."""
+        from app.knowledge.embeddings import _embedding_pipeline_instance, get_embedding_pipeline
+
+        # Reset to None to test fresh behavior
+        import app.knowledge.embeddings as embeddings_module
+        embeddings_module._embedding_pipeline_instance = None
+        assert embeddings_module._embedding_pipeline_instance is None
+
+        # Access pipeline to trigger initialization
+        pipeline = get_embedding_pipeline()
+        assert pipeline is not None
+        assert embeddings_module._embedding_pipeline_instance is not None
+
+    def test_agents_lazy_loading(self):
+        """Test agents are not initialized until first access."""
+        from app.api.v1.endpoints.agent_execution import (
+            _agents_initialized, _planner, _orchestrator, _research_agent,
+            _coding_agent, _memory_agent, _tool_agent, _reflection_agent
+        )
+
+        # Reset to test fresh behavior
+        import app.api.v1.endpoints.agent_execution as agent_module
+        agent_module._agents_initialized = False
+        agent_module._planner = None
+        agent_module._orchestrator = None
+        agent_module._research_agent = None
+        agent_module._coding_agent = None
+        agent_module._memory_agent = None
+        agent_module._tool_agent = None
+        agent_module._reflection_agent = None
+
+        # Agents should not be initialized
+        assert agent_module._agents_initialized is False
+        assert agent_module._planner is None
+        assert agent_module._orchestrator is None
+
+        # Access agents to trigger initialization
+        from app.api.v1.endpoints.agent_execution import get_planner
+        planner = get_planner()
+
+        # Now agents should be initialized
+        assert planner is not None
+        assert agent_module._agents_initialized is True
+        assert agent_module._planner is not None
+        assert agent_module._orchestrator is not None
+
     def test_fastapi_import_without_heavyweight_services(self):
         """Test that services are lazy-loaded and not initialized at module import."""
         # This test verifies the lazy loading mechanism works correctly

@@ -499,5 +499,23 @@ class EmbeddingPipeline:
         return knowledge_embeddings
 
 
-# Singleton instance
-embedding_pipeline = EmbeddingPipeline()
+# Lazy-loaded embedding pipeline singleton
+_embedding_pipeline_instance: Optional[EmbeddingPipeline] = None
+
+
+def get_embedding_pipeline() -> EmbeddingPipeline:
+    """Get or create the embedding pipeline instance (lazy-loaded)."""
+    global _embedding_pipeline_instance
+    if _embedding_pipeline_instance is None:
+        _embedding_pipeline_instance = EmbeddingPipeline()
+    return _embedding_pipeline_instance
+
+
+# Backward compatibility: allow importing embedding_pipeline directly
+class _EmbeddingPipelineProxy:
+    """Proxy for lazy-loaded embedding pipeline."""
+    def __getattr__(self, name: str) -> Any:
+        return getattr(get_embedding_pipeline(), name)
+
+
+embedding_pipeline = _EmbeddingPipelineProxy()
