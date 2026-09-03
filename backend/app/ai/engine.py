@@ -1,7 +1,4 @@
 from typing import Dict, List, Optional, AsyncIterator, Any
-from .base import BaseLLMProvider, Message, LLMResponse
-from .openai_provider import OpenAIProvider
-from .anthropic_provider import AnthropicProvider
 from loguru import logger
 
 
@@ -9,7 +6,7 @@ class AIEngine:
     """Main AI engine for managing multiple LLM providers"""
     
     def __init__(self) -> None:
-        self.providers: Dict[str, BaseLLMProvider] = {}
+        self.providers: Dict[str, Any] = {}
         self.default_provider: Optional[str] = None
     
     def register_provider(
@@ -21,9 +18,12 @@ class AIEngine:
         **kwargs: Any
     ) -> None:
         """Register a new LLM provider"""
+        # Lazy import providers to avoid blocking startup
         if provider_type == "openai":
+            from .openai_provider import OpenAIProvider
             self.providers[name] = OpenAIProvider(api_key, model, **kwargs)
         elif provider_type == "anthropic":
+            from .anthropic_provider import AnthropicProvider
             self.providers[name] = AnthropicProvider(api_key, model, **kwargs)
         else:
             raise ValueError(f"Unsupported provider type: {provider_type}")
@@ -40,7 +40,7 @@ class AIEngine:
         self.default_provider = name
         logger.info(f"Set default provider to '{name}'")
     
-    def get_provider(self, name: Optional[str] = None) -> BaseLLMProvider:
+    def get_provider(self, name: Optional[str] = None) -> Any:
         """Get a provider by name or default"""
         provider_name = name or self.default_provider
         if provider_name is None:
@@ -51,12 +51,12 @@ class AIEngine:
     
     async def generate(
         self,
-        messages: List[Message],
+        messages: List[Any],
         provider: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         **kwargs: Any
-    ) -> LLMResponse:
+    ) -> Any:
         """Generate a response using the specified or default provider"""
         llm = self.get_provider(provider)
         logger.info(f"Generating response using provider '{provider or self.default_provider}'")
@@ -64,7 +64,7 @@ class AIEngine:
     
     async def generate_stream(
         self,
-        messages: List[Message],
+        messages: List[Any],
         provider: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,

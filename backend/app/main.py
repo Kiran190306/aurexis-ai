@@ -54,9 +54,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     else:
         logger.info("Production mode - skipping create_all, relying on Alembic migrations")
     
-    await initialize_ai_engine()
-    app.state.ai_engine_ready = True
-    logger.info("AI Engine initialized")
+    # AI Engine initialization is now lazy - defer to first use
+    # This prevents blocking startup on external AI provider connections
+    app.state.ai_engine_ready = False
+    logger.info("AI Engine will be initialized on first use")
     logger.info("Aurexis AI Backend started successfully")
     yield
     # Shutdown

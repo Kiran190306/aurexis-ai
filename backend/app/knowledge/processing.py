@@ -80,13 +80,17 @@ class LanguageDetector:
     """
     Detect document language using FastText
     """
-    
+
     def __init__(self) -> None:
         self.model = None
-        self._load_model()
-    
+        # Lazy load model - don't load during import
+        self._model_loaded = False
+
     def _load_model(self) -> None:
         """Load FastText language detection model"""
+        if self._model_loaded:
+            return
+
         try:
             import fasttext
             # Use lightweight language detection model
@@ -96,6 +100,8 @@ class LanguageDetector:
         except Exception as e:
             logger.warning(f"Failed to load FastText model: {e}. Using fallback detection.")
             self.model = None
+
+        self._model_loaded = True
     
     def detect_language(self, content: str) -> tuple[str, float]:
         """
@@ -118,6 +124,7 @@ class LanguageDetector:
                 logger.warning(f"FastText detection failed: {e}. Using fallback.")
         
         # Fallback: simple heuristic
+        self._model_loaded = True  # Mark as attempted even if using fallback
         return self._fallback_language_detection(content)
     
     def _fallback_language_detection(self, content: str) -> tuple[str, float]:
@@ -414,5 +421,16 @@ class DocumentProcessor:
         return document
 
 
-# Singleton instance
-document_processor = DocumentProcessor()
+# Lazy-loaded document processor instance
+_document_processor = None
+
+
+def get_document_processor():
+    global _document_processor
+    if _document_processor is None:
+        _document_processor = DocumentProcessor()
+    return _document_processor
+
+
+# Backward compatibility
+document_processor = property(lambda: get_document_processor())

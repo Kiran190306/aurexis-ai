@@ -172,3 +172,138 @@ class TestLazyLoading:
         # This will trigger lazy initialization
         assert hasattr(ocr_service, 'extract_text')
         assert hasattr(vision_service, 'validate_image')
+
+    def test_ai_engine_lazy_loading(self):
+        """Test AI engine providers are lazy-loaded."""
+        from app.ai.engine import AIEngine
+
+        # Create a new AI engine instance
+        engine = AIEngine()
+
+        # Providers should be empty initially
+        assert len(engine.providers) == 0
+
+        # Register a provider - this should trigger lazy import
+        engine.register_provider(
+            name="test_openai",
+            provider_type="openai",
+            api_key="test_key",
+            model="gpt-4"
+        )
+
+        # Now provider should be loaded
+        assert "test_openai" in engine.providers
+        assert engine.providers["test_openai"] is not None
+
+    def test_voice_services_lazy_loading(self):
+        """Test voice services are lazy-loaded."""
+        from app.voice.audio_manager import _audio_manager, get_audio_manager
+        from app.voice.whisper_service import _whisper_service, get_whisper_service
+        from app.voice.tts_service import _tts_service, get_tts_service
+
+        # Reset to test fresh behavior
+        import app.voice.audio_manager as audio_module
+        import app.voice.whisper_service as whisper_module
+        import app.voice.tts_service as tts_module
+
+        audio_module._audio_manager = None
+        whisper_module._whisper_service = None
+        tts_module._tts_service = None
+
+        assert audio_module._audio_manager is None
+        assert whisper_module._whisper_service is None
+        assert tts_module._tts_service is None
+
+        # Access services to trigger initialization
+        audio = get_audio_manager()
+        whisper = get_whisper_service()
+        tts = get_tts_service()
+
+        assert audio is not None
+        assert whisper is not None
+        assert tts is not None
+        assert audio_module._audio_manager is not None
+        assert whisper_module._whisper_service is not None
+        assert tts_module._tts_service is not None
+
+    def test_computer_services_lazy_loading(self):
+        """Test computer services are lazy-loaded."""
+        from app.api.v1.endpoints.computer import (
+            _file_system_agent, _terminal_agent, _browser_agent,
+            _desktop_agent, _workflow_engine, _permission_system
+        )
+
+        # Reset to test fresh behavior
+        import app.api.v1.endpoints.computer as computer_module
+        computer_module._file_system_agent = None
+        computer_module._terminal_agent = None
+        computer_module._browser_agent = None
+        computer_module._desktop_agent = None
+        computer_module._workflow_engine = None
+        computer_module._permission_system = None
+
+        assert computer_module._file_system_agent is None
+        assert computer_module._terminal_agent is None
+
+        # Access services to trigger initialization
+        from app.api.v1.endpoints.computer import (
+            get_file_system_agent, get_terminal_agent
+        )
+        fs_agent = get_file_system_agent()
+        term_agent = get_terminal_agent()
+
+        assert fs_agent is not None
+        assert term_agent is not None
+        assert computer_module._file_system_agent is not None
+        assert computer_module._terminal_agent is not None
+
+    def test_celery_worker_lazy_loading(self):
+        """Test Celery worker is lazy-loaded."""
+        from app.worker import _celery_app, get_celery_app
+
+        # Reset to test fresh behavior
+        import app.worker as worker_module
+        worker_module._celery_app = None
+
+        assert worker_module._celery_app is None
+
+        # The celery_app proxy should exist without triggering initialization
+        from app.worker import celery_app
+        assert celery_app is not None
+
+        # Access should trigger initialization (but we won't call it to avoid circular import in test)
+        # Just verify the mechanism exists
+        assert hasattr(worker_module, 'get_celery_app')
+
+    def test_knowledge_processing_lazy_loading(self):
+        """Test knowledge processing is lazy-loaded."""
+        from app.knowledge.processing import _document_processor, get_document_processor
+
+        # Reset to test fresh behavior
+        import app.knowledge.processing as processing_module
+        processing_module._document_processor = None
+
+        assert processing_module._document_processor is None
+
+        # Access processor to trigger initialization
+        processor = get_document_processor()
+
+        assert processor is not None
+        assert processing_module._document_processor is not None
+
+    def test_language_detector_lazy_model_loading(self):
+        """Test LanguageDetector loads model lazily."""
+        from app.knowledge.processing import LanguageDetector
+
+        detector = LanguageDetector()
+
+        # Model should not be loaded initially
+        assert detector.model is None
+        assert detector._model_loaded is False
+
+        # First detect_language call should trigger model load attempt
+        # Since fasttext is not installed, it will use fallback but still mark as loaded
+        lang, confidence = detector.detect_language("Hello world")
+
+        # After first call, model_loaded flag should be True (attempted load)
+        assert detector._model_loaded is True

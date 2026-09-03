@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
 
 from app.core.security import get_current_user_id
-from app.worker import celery_app
+from app.worker import get_celery_app
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -18,16 +18,11 @@ async def get_task_status(
     current_user_id: int = Depends(get_current_user_id)
 ) -> dict:
     """
-    Get the status of a Celery task
-    
-    Args:
-        task_id: Celery task ID
-        
-    Returns:
-        Task status information
+    Get the status of a Celery task by its ID
     """
     try:
-        result = celery_app.AsyncResult(task_id)
+        celery = get_celery_app()
+        result = celery.AsyncResult(task_id)
         
         return {
             "task_id": task_id,
@@ -62,7 +57,8 @@ async def get_task_result(
         Task result
     """
     try:
-        result = celery_app.AsyncResult(task_id)
+        celery = get_celery_app()
+        result = celery.AsyncResult(task_id)
         
         if not result.ready():
             raise HTTPException(
@@ -106,7 +102,8 @@ async def cancel_task(
         Cancellation result
     """
     try:
-        result = celery_app.AsyncResult(task_id)
+        celery = get_celery_app()
+        result = celery.AsyncResult(task_id)
         
         if result.ready():
             raise HTTPException(
@@ -114,7 +111,7 @@ async def cancel_task(
                 detail="Cannot cancel a completed task"
             )
         
-        celery_app.control.revoke(task_id, terminate=True)
+        celery.control.revoke(task_id, terminate=True)
         
         logger.info(f"Task {task_id} cancelled by user {current_user_id}")
         
@@ -144,7 +141,8 @@ async def get_worker_stats(
         Worker statistics
     """
     try:
-        inspect = celery_app.control.inspect()
+        celery = get_celery_app()
+        inspect = celery.control.inspect()
         
         stats = inspect.stats()
         active = inspect.active()

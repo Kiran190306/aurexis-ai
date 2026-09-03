@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
 
-from app.worker import celery_app
+from app.worker import get_celery_app
 from app.core.database import AsyncSessionLocal
 from app.models.computer import WorkflowExecution, WorkflowDefinition, ExecutionStatus
 

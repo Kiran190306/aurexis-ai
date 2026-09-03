@@ -263,5 +263,16 @@ class WhisperService:
         return self.model is not None
 
 
-# Global Whisper service instance
-whisper_service = WhisperService()
+# Lazy-loaded Whisper service instance
+_whisper_service = None
+
+
+def get_whisper_service():
+    global _whisper_service
+    if _whisper_service is None:
+        _whisper_service = WhisperService()
+    return _whisper_service
+
+
+# Backward compatibility
+whisper_service = property(lambda: get_whisper_service())

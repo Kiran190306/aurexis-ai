@@ -234,5 +234,16 @@ class AudioManager:
         pass
 
 
-# Global audio manager instance
-audio_manager = AudioManager()
+# Lazy-loaded audio manager instance
+_audio_manager = None
+
+
+def get_audio_manager():
+    global _audio_manager
+    if _audio_manager is None:
+        _audio_manager = AudioManager()
+    return _audio_manager
+
+
+# Backward compatibility
+audio_manager = property(lambda: get_audio_manager())

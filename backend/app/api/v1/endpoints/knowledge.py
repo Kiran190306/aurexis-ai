@@ -100,8 +100,8 @@ async def upload_document(
         await db.commit()
         
         # Queue Celery task for embedding generation
-        from app.worker import celery_app
-        task = celery_app.send_task(
+        from app.worker import get_celery_app
+        task = get_celery_app().send_task(
             'app.tasks.knowledge_tasks.generate_embeddings',
             args=[document.id],
             queue='knowledge'
@@ -156,8 +156,8 @@ async def index_document(
             return {"message": "Document already indexed"}
         
         # Queue Celery task for embedding generation
-        from app.worker import celery_app
-        task = celery_app.send_task(
+        from app.worker import get_celery_app
+        task = get_celery_app().send_task(
             'app.tasks.knowledge_tasks.generate_embeddings',
             args=[document.id],
             queue='knowledge'

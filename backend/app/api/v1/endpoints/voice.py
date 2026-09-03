@@ -31,14 +31,37 @@ from app.schemas.voice import (
     VoiceConversationResponse,
     VoiceSettingsResponse
 )
-from app.voice.whisper_service import whisper_service
-from app.voice.tts_service import tts_service
 from app.voice.voice_agent import VoiceAgent
 
 router = APIRouter()
 
-# Initialize voice agent
-voice_agent = VoiceAgent()
+# Lazy-loaded voice services
+_whisper_service = None
+_tts_service = None
+_voice_agent = None
+
+
+def get_whisper_service():
+    global _whisper_service
+    if _whisper_service is None:
+        from app.voice.whisper_service import WhisperService
+        _whisper_service = WhisperService()
+    return _whisper_service
+
+
+def get_tts_service():
+    global _tts_service
+    if _tts_service is None:
+        from app.voice.tts_service import TTSService
+        _tts_service = TTSService()
+    return _tts_service
+
+
+def get_voice_agent():
+    global _voice_agent
+    if _voice_agent is None:
+        _voice_agent = VoiceAgent()
+    return _voice_agent
 
 
 @asynccontextmanager
@@ -46,14 +69,14 @@ async def lifespan(app: Any) -> AsyncGenerator[None, None]:
     """Lifespan context manager for voice services."""
     if settings.ENABLE_VOICE:
         try:
-            await voice_agent.initialize()
+            await get_voice_agent().initialize()
             logger.info("Voice services initialized")
         except Exception as e:
             logger.error(f"Failed to initialize voice services: {e}")
     yield
     if settings.ENABLE_VOICE:
         try:
-            await voice_agent.shutdown()
+            await get_voice_agent().shutdown()
             logger.info("Voice services shutdown")
         except Exception as e:
             logger.error(f"Failed to shutdown voice services: {e}")
@@ -83,7 +106,7 @@ async def transcribe_audio(
         audio_data = await file.read()
         
         # Transcribe
-        result = await whisper_service.transcribe(
+        result = await get_whisper_service().transcribe(
             audio_data,
             language=language,
             detect_language=detect_language
@@ -137,7 +160,7 @@ async def synthesize_speech(
             format=AudioFormat(format)
         )
         
-        result = await tts_service.synthesize(request)
+        result = await get_tts_service().synthesize(request)
         
         return SynthesisResponse(
             audio_data=result.audio_data.hex(),
@@ -220,7 +243,7 @@ async def voice_chat(
         
         if file:
             audio_data = await file.read()
-            transcription = await whisper_service.transcribe(audio_data)
+            transcription = await get_whisper_service().transcribe(audio_data)
             user_text = transcription.text
             transcription_confidence = transcription.confidence
         
@@ -246,7 +269,7 @@ async def voice_chat(
                 format=AudioFormat.WAV
             )
             
-            synthesis_result = await tts_service.synthesize(synthesis_request)
+            synthesis_result = await get_tts_service().synthesize(synthesis_request)
             audio_data_hex = synthesis_result.audio_data.hex()
         
         # Save messages

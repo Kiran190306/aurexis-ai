@@ -105,16 +105,44 @@ def create_celery_app() -> Celery:
     return celery_app
 
 
-# Create Celery app instance
-celery_app = create_celery_app()
+# Lazy-loaded Celery app instance
+_celery_app = None
 
 
-# Optional: Import tasks to register them
-try:
-    from app.tasks import document_tasks, knowledge_tasks, agent_tasks, computer_tasks
-    logger.info("Celery tasks imported successfully")
-except ImportError as e:
-    logger.warning(f"Could not import Celery tasks: {e}")
+def get_celery_app():
+    global _celery_app
+    if _celery_app is None:
+        _celery_app = create_celery_app()
+        # Import tasks to register them
+        try:
+            from app.tasks import document_tasks, knowledge_tasks, agent_tasks, computer_tasks
+            logger.info("Celery tasks imported successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import Celery tasks: {e}")
+    return _celery_app
+
+
+# For task decorators that need the actual app at module import time
+# This is used by task modules
+_celery_app_for_tasks = None
+
+
+def _get_celery_app_for_tasks():
+    global _celery_app_for_tasks
+    if _celery_app_for_tasks is None:
+        _celery_app_for_tasks = create_celery_app()
+    return _celery_app_for_tasks
+
+
+# Create a module-level variable that task modules can import
+# This is initialized lazily on first access
+class _CeleryAppProxy:
+    def __getattr__(self, name):
+        app = _get_celery_app_for_tasks()
+        return getattr(app, name)
+
+
+celery_app = _CeleryAppProxy()
 
 
 if __name__ == '__main__':

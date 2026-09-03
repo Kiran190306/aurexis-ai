@@ -65,12 +65,6 @@ from app.schemas.computer import (
     WorkflowDefinitionResponse,
     ExecutionStatus as SchemaExecutionStatus
 )
-from app.computer.file_system_agent import file_system_agent
-from app.computer.terminal_agent import terminal_agent
-from app.computer.browser_agent import browser_agent
-from app.computer.desktop_agent import desktop_agent
-from app.computer.workflow_engine import workflow_engine
-from app.computer.permission_system import permission_system
 from app.computer.base import (
     WorkflowStep,
     WorkflowDefinition as WorkflowDef,
@@ -81,6 +75,62 @@ from app.core.config import settings
 
 
 router = APIRouter()
+
+# Lazy-loaded computer agents
+_file_system_agent = None
+_terminal_agent = None
+_browser_agent = None
+_desktop_agent = None
+_workflow_engine = None
+_permission_system = None
+
+
+def get_file_system_agent():
+    global _file_system_agent
+    if _file_system_agent is None:
+        from app.computer.file_system_agent import FileSystemAgent
+        _file_system_agent = FileSystemAgent()
+    return _file_system_agent
+
+
+def get_terminal_agent():
+    global _terminal_agent
+    if _terminal_agent is None:
+        from app.computer.terminal_agent import TerminalAgent
+        _terminal_agent = TerminalAgent()
+    return _terminal_agent
+
+
+def get_browser_agent():
+    global _browser_agent
+    if _browser_agent is None:
+        from app.computer.browser_agent import BrowserAgent
+        _browser_agent = BrowserAgent()
+    return _browser_agent
+
+
+def get_desktop_agent():
+    global _desktop_agent
+    if _desktop_agent is None:
+        from app.computer.desktop_agent import DesktopAgent
+        _desktop_agent = DesktopAgent()
+    return _desktop_agent
+
+
+def get_workflow_engine():
+    global _workflow_engine
+    if _workflow_engine is None:
+        from app.computer.workflow_engine import WorkflowEngine
+        _workflow_engine = WorkflowEngine()
+    return _workflow_engine
+
+
+def get_permission_system():
+    global _permission_system
+    if _permission_system is None:
+        from app.computer.permission_system import PermissionSystem
+        _permission_system = PermissionSystem()
+    return _permission_system
 
 
 # ============================================================================
@@ -93,7 +143,7 @@ async def browse_directory(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Browse directory contents."""
-    result = await file_system_agent.browse_directory(
+    result = await get_file_system_agent().browse_directory(
         request.path,
         request.depth,
         current_user_id
@@ -107,7 +157,7 @@ async def read_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Read file contents."""
-    result = await file_system_agent.read_file(request.path, current_user_id)
+    result = await get_file_system_agent().read_file(request.path, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -117,7 +167,7 @@ async def write_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Write content to file."""
-    result = await file_system_agent.write_file(
+    result = await get_file_system_agent().write_file(
         request.path,
         request.content,
         request.overwrite,
@@ -132,7 +182,7 @@ async def delete_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Delete file or directory."""
-    result = await file_system_agent.delete_file(request.path, current_user_id)
+    result = await get_file_system_agent().delete_file(request.path, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -142,7 +192,7 @@ async def rename_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Rename file or directory."""
-    result = await file_system_agent.rename_file(request.source, request.target, current_user_id)
+    result = await get_file_system_agent().rename_file(request.source, request.target, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -152,7 +202,7 @@ async def move_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Move file or directory."""
-    result = await file_system_agent.move_file(request.source, request.target, current_user_id)
+    result = await get_file_system_agent().move_file(request.source, request.target, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -162,7 +212,7 @@ async def copy_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Copy file or directory."""
-    result = await file_system_agent.copy_file(request.source, request.target, current_user_id)
+    result = await get_file_system_agent().copy_file(request.source, request.target, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -172,7 +222,7 @@ async def search_files(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Search for files matching pattern."""
-    result = await file_system_agent.search_files(request.path, request.pattern, current_user_id)
+    result = await get_file_system_agent().search_files(request.path, request.pattern, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -182,7 +232,7 @@ async def create_archive(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Create ZIP archive."""
-    result = await file_system_agent.create_archive(request.source, request.target, current_user_id)
+    result = await get_file_system_agent().create_archive(request.source, request.target, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -192,7 +242,7 @@ async def extract_archive(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Extract ZIP archive."""
-    result = await file_system_agent.extract_archive(request.source, request.target, current_user_id)
+    result = await get_file_system_agent().extract_archive(request.source, request.target, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -206,7 +256,7 @@ async def execute_command(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Execute shell command."""
-    result = await terminal_agent.execute_command(
+    result = await get_terminal_agent().execute_command(
         request.command,
         request.working_directory,
         request.environment,
@@ -223,14 +273,14 @@ async def cancel_command(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Cancel running command."""
-    result = await terminal_agent.cancel_command(request.action_id, current_user_id)
+    result = await get_terminal_agent().cancel_command(request.action_id, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
 @router.get("/terminal/working-directory")
 async def get_working_directory(current_user_id: int = Depends(get_current_user_id)) -> dict[str, str]:
     """Get current working directory."""
-    return {"working_directory": terminal_agent.get_working_directory()}
+    return {"working_directory": get_terminal_agent().get_working_directory()}
 
 
 @router.post("/terminal/working-directory", response_model=ExecutionResultResponse)
@@ -239,14 +289,14 @@ async def set_working_directory(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Set working directory."""
-    result = terminal_agent.set_working_directory(request.path, current_user_id)
+    result = get_terminal_agent().set_working_directory(request.path, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
 @router.get("/terminal/environment")
 async def get_environment_variables(current_user_id: int = Depends(get_current_user_id)) -> dict[str, Any]:
     """Get environment variables."""
-    return {"environment": terminal_agent.get_environment_variables()}
+    return {"environment": get_terminal_agent().get_environment_variables()}
 
 
 @router.post("/terminal/environment", response_model=ExecutionResultResponse)
@@ -255,7 +305,7 @@ async def set_environment_variable(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Set environment variable."""
-    result = terminal_agent.set_environment_variable(request.name, request.value, current_user_id)
+    result = get_terminal_agent().set_environment_variable(request.name, request.value, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -265,13 +315,13 @@ async def get_command_history(
     current_user_id: int = Depends(get_current_user_id)
 ) -> dict[str, Any]:
     """Get command execution history."""
-    return {"history": terminal_agent.get_command_history(limit)}
+    return {"history": get_terminal_agent().get_command_history(limit)}
 
 
 @router.get("/terminal/running")
 async def get_running_commands(current_user_id: int = Depends(get_current_user_id)) -> dict[str, Any]:
     """Get running commands."""
-    return {"running": terminal_agent.get_running_commands()}
+    return {"running": get_terminal_agent().get_running_commands()}
 
 
 # ============================================================================
@@ -284,7 +334,7 @@ async def open_browser(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Open browser and optionally navigate to URL."""
-    result = await browser_agent.open_browser(request.url, current_user_id)
+    result = await get_browser_agent().open_browser(request.url, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -294,7 +344,7 @@ async def navigate(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Navigate to URL."""
-    result = await browser_agent.navigate(request.page_id, request.url, current_user_id)
+    result = await get_browser_agent().navigate(request.page_id, request.url, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -304,7 +354,7 @@ async def click_element(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Click element on page."""
-    result = await browser_agent.click_element(request.page_id, request.selector, current_user_id)
+    result = await get_browser_agent().click_element(request.page_id, request.selector, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -314,7 +364,7 @@ async def fill_form(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Fill form field."""
-    result = await browser_agent.fill_form(request.page_id, request.selector, request.value, current_user_id)
+    result = await get_browser_agent().fill_form(request.page_id, request.selector, request.value, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -324,7 +374,7 @@ async def extract_content(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Extract content from page."""
-    result = await browser_agent.extract_content(request.page_id, request.selector, current_user_id)
+    result = await get_browser_agent().extract_content(request.page_id, request.selector, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -334,7 +384,7 @@ async def download_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Download file from URL."""
-    result = await browser_agent.download_file(request.page_id, request.url, current_user_id)
+    result = await get_browser_agent().download_file(request.page_id, request.url, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -344,7 +394,7 @@ async def upload_file(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Upload file via file input."""
-    result = await browser_agent.upload_file(request.page_id, request.selector, request.file_path, current_user_id)
+    result = await get_browser_agent().upload_file(request.page_id, request.selector, request.file_path, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -354,7 +404,7 @@ async def take_screenshot(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Take screenshot of page."""
-    result = await browser_agent.take_screenshot(request.page_id, current_user_id)
+    result = await get_browser_agent().take_screenshot(request.page_id, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -364,14 +414,14 @@ async def close_browser(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Close browser page or entire browser."""
-    result = await browser_agent.close_browser(request.page_id, current_user_id)
+    result = await get_browser_agent().close_browser(request.page_id, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
 @router.get("/browser/pages")
 async def get_active_pages(current_user_id: int = Depends(get_current_user_id)) -> dict[str, Any]:
     """Get active browser pages."""
-    return {"pages": browser_agent.get_active_pages()}
+    return {"pages": get_browser_agent().get_active_pages()}
 
 
 # ============================================================================
@@ -384,7 +434,7 @@ async def launch_application(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Launch application."""
-    result = await desktop_agent.launch_application(request.application, current_user_id)
+    result = await get_desktop_agent().launch_application(request.application, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -394,7 +444,7 @@ async def close_application(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Close application."""
-    result = await desktop_agent.close_application(request.application, current_user_id)
+    result = await get_desktop_agent().close_application(request.application, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -404,14 +454,14 @@ async def manage_window(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Manage window."""
-    result = await desktop_agent.manage_window(request.action, request.window_title, current_user_id)
+    result = await get_desktop_agent().manage_window(request.action, request.window_title, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
 @router.get("/desktop/clipboard", response_model=ExecutionResultResponse)
 async def get_clipboard(current_user_id: int = Depends(get_current_user_id)) -> ExecutionResultResponse:
     """Get clipboard content."""
-    result = await desktop_agent.get_clipboard(current_user_id)
+    result = await get_desktop_agent().get_clipboard(current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -421,7 +471,7 @@ async def set_clipboard(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Set clipboard content."""
-    result = await desktop_agent.set_clipboard(request.content, current_user_id)
+    result = await get_desktop_agent().set_clipboard(request.content, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
@@ -431,28 +481,28 @@ async def send_notification(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ExecutionResultResponse:
     """Send desktop notification."""
-    result = await desktop_agent.send_notification(request.title, request.message, current_user_id)
+    result = await get_desktop_agent().send_notification(request.title, request.message, current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
 @router.post("/desktop/capture", response_model=ExecutionResultResponse)
 async def capture_screen(current_user_id: int = Depends(get_current_user_id)) -> ExecutionResultResponse:
     """Capture screen screenshot."""
-    result = await desktop_agent.capture_screen(current_user_id)
+    result = await get_desktop_agent().capture_screen(current_user_id)
     return ExecutionResultResponse(**result.dict())
 
 
 @router.get("/desktop/applications", response_model=ExecutionResultResponse)
 async def get_running_applications(current_user_id: int = Depends(get_current_user_id)) -> ExecutionResultResponse:
     """Get running applications."""
-    result = desktop_agent.get_running_applications()
+    result = get_desktop_agent().get_running_applications()
     return ExecutionResultResponse(**result.dict())
 
 
 @router.get("/desktop/platform")
 async def get_platform(current_user_id: int = Depends(get_current_user_id)) -> dict[str, str]:
     """Get current platform."""
-    return {"platform": desktop_agent.get_platform()}
+    return {"platform": get_desktop_agent().get_platform()}
 
 
 # ============================================================================
@@ -507,7 +557,7 @@ async def create_workflow(
         requires_approval=request.requires_approval,
         timeout=request.timeout
     )
-    workflow_engine.register_workflow(workflow_def)
+    get_workflow_engine().register_workflow(workflow_def)
     
     return WorkflowDefinitionResponse(
         id=workflow.id,  # type: ignore[arg-type]
@@ -628,8 +678,8 @@ async def execute_workflow(
     await db.refresh(execution)
     
     # Queue Celery task for execution
-    from app.worker import celery_app
-    task = celery_app.send_task(
+    from app.worker import get_celery_app
+    task = get_celery_app().send_task(
         'app.tasks.computer_tasks.execute_workflow',
         args=[execution.id],
         queue='computer'
@@ -654,7 +704,7 @@ async def cancel_workflow(
     current_user_id: int = Depends(get_current_user_id)
 ) -> dict[str, str]:
     """Cancel workflow execution."""
-    success = workflow_engine.cancel_execution(request.execution_id)
+    success = get_workflow_engine().cancel_execution(request.execution_id)
     
     if not success:
         raise HTTPException(
@@ -671,7 +721,7 @@ async def get_workflow_execution(
     current_user_id: int = Depends(get_current_user_id)
 ) -> WorkflowExecutionResponse:
     """Get workflow execution by ID."""
-    execution = workflow_engine.get_execution(execution_id)
+    execution = get_workflow_engine().get_execution(execution_id)
     
     if not execution:
         raise HTTPException(
@@ -699,21 +749,21 @@ async def get_workflow_execution(
 @router.get("/permissions/pending")
 async def get_pending_permissions(current_user_id: int = Depends(get_current_user_id)) -> dict[str, Any]:
     """Get pending permission requests."""
-    pending = permission_system.get_pending_requests()
+    pending = get_permission_system().get_pending_requests()
     return {"pending": pending}
 
 
 @router.get("/permissions/approved")
 async def get_approved_permissions(current_user_id: int = Depends(get_current_user_id)) -> dict[str, Any]:
     """Get approved permissions."""
-    approved = permission_system.get_approved_permissions(current_user_id)
+    approved = get_permission_system().get_approved_permissions(current_user_id)
     return {"approved": approved}
 
 
 @router.get("/permissions/denied")
 async def get_denied_permissions(current_user_id: int = Depends(get_current_user_id)) -> dict[str, Any]:
     """Get denied permissions."""
-    denied = permission_system.get_denied_permissions(current_user_id)
+    denied = get_permission_system().get_denied_permissions(current_user_id)
     return {"denied": denied}
 
 
@@ -723,7 +773,7 @@ async def approve_permission(
     current_user_id: int = Depends(get_current_user_id)
 ) -> PermissionResponseSchema:
     """Approve permission request."""
-    response = await permission_system.approve_permission(
+    response = await get_permission_system().approve_permission(
         request.request_id,
         current_user_id,
         request.approve_for_session
@@ -737,7 +787,7 @@ async def deny_permission(
     current_user_id: int = Depends(get_current_user_id)
 ) -> PermissionResponseSchema:
     """Deny permission request."""
-    response = await permission_system.deny_permission(
+    response = await get_permission_system().deny_permission(
         request.request_id,
         current_user_id,
         request.reason
@@ -751,14 +801,14 @@ async def revoke_permission(
     current_user_id: int = Depends(get_current_user_id)
 ) -> dict[str, str]:
     """Revoke approved permission."""
-    permission_system.revoke_permission(request_id)
+    get_permission_system().revoke_permission(request_id)
     return {"message": "Permission revoked"}
 
 
 @router.post("/permissions/clear-expired")
 async def clear_expired_permissions(current_user_id: int = Depends(get_current_user_id)) -> dict[str, int]:
     """Clear expired permissions."""
-    count = permission_system.clear_expired_permissions()
+    count = get_permission_system().clear_expired_permissions()
     return {"cleared": count}
 
 
@@ -804,5 +854,5 @@ async def get_workflow_history(
     current_user_id: int = Depends(get_current_user_id)
 ) -> dict[str, Any]:
     """Get workflow execution history."""
-    history = workflow_engine.get_execution_history(limit)
+    history = get_workflow_engine().get_execution_history(limit)
     return {"history": history}

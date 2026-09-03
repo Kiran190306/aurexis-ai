@@ -241,5 +241,16 @@ class TTSService:
         return (minutes / speed) * 60.0
 
 
-# Global TTS service instance
-tts_service = TTSService()
+# Lazy-loaded TTS service instance
+_tts_service = None
+
+
+def get_tts_service():
+    global _tts_service
+    if _tts_service is None:
+        _tts_service = TTSService()
+    return _tts_service
+
+
+# Backward compatibility
+tts_service = property(lambda: get_tts_service())

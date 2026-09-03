@@ -179,8 +179,8 @@ async def execute_agent_request(
         await db.refresh(execution_plan)
         
         # Step 3: Queue Celery task for execution
-        from app.worker import celery_app
-        task = celery_app.send_task(
+        from app.worker import get_celery_app
+        task = get_celery_app().send_task(
             'app.tasks.agent_tasks.execute_agent_plan',
             args=[str(execution_plan.uuid)],
             queue='agents'
@@ -188,7 +188,7 @@ async def execute_agent_request(
         
         # Step 4: Queue reflection task if enabled
         if request.enable_reflection:
-            reflection_task = celery_app.send_task(
+            reflection_task = get_celery_app().send_task(
                 'app.tasks.agent_tasks.run_reflection',
                 args=[str(execution_plan.uuid)],
                 queue='agents'
