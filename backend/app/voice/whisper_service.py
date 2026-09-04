@@ -2,10 +2,8 @@
 WhisperService - Speech-to-Text using OpenAI Whisper.
 """
 from typing import Optional, List, Dict, Any, AsyncGenerator
-import numpy as np
 from loguru import logger
 import time
-from transformers import WhisperProcessor, WhisperForConditionalGeneration
 
 from app.core.config import settings
 from app.voice.base import TranscriptionResult
@@ -22,15 +20,17 @@ class WhisperService:
         self.chunk_length = settings.WHISPER_CHUNK_LENGTH
         self.language = settings.WHISPER_LANGUAGE
         
-        self.model: Optional[WhisperForConditionalGeneration] = None
-        self.processor: Optional[WhisperProcessor] = None
+        self.model: Optional[Any] = None
+        self.processor: Optional[Any] = None
         
         logger.info(f"WhisperService initialized with model={self.model_name}, device={self.device}")
     
     async def initialize(self) -> None:
         """Initialize Whisper model."""
         try:
+            import numpy as np
             import torch
+            from transformers import WhisperProcessor, WhisperForConditionalGeneration
             
             logger.info(f"Loading Whisper model: {self.model_name}")
             

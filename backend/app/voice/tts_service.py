@@ -2,7 +2,6 @@
 TTSService - Text-to-Speech using Piper TTS.
 """
 from typing import Optional, List, Dict, Any
-import numpy as np
 from loguru import logger
 import time
 
@@ -55,6 +54,8 @@ class TTSService:
     async def initialize(self) -> None:
         """Initialize TTS model."""
         try:
+            import numpy as np
+            
             # Try to load Piper TTS
             try:
                 from piper import PiperVoice

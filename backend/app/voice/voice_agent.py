@@ -6,8 +6,6 @@ from loguru import logger
 
 from app.agents.base import BaseAgent, AgentRole, Task, AgentResponse
 from app.voice.base import VoiceConversation, VoiceMessage
-from app.voice.whisper_service import whisper_service
-from app.voice.tts_service import tts_service
 from app.ai.engine import ai_engine
 from app.ai.base import Message
 
@@ -31,6 +29,13 @@ class VoiceAgent(BaseAgent):
         """Initialize the voice agent."""
         logger.info(f"Initializing Voice Agent: {self.agent_id}")
         
+        # Lazy import voice services
+        from app.voice.whisper_service import get_whisper_service
+        from app.voice.tts_service import get_tts_service
+        
+        whisper_service = get_whisper_service()
+        tts_service = get_tts_service()
+        
         # Initialize voice services
         if not whisper_service.is_initialized():
             await whisper_service.initialize()
@@ -41,6 +46,13 @@ class VoiceAgent(BaseAgent):
     async def shutdown(self) -> None:
         """Shutdown the voice agent."""
         logger.info(f"Shutting down Voice Agent: {self.agent_id}")
+        
+        # Lazy import voice services
+        from app.voice.whisper_service import get_whisper_service
+        from app.voice.tts_service import get_tts_service
+        
+        whisper_service = get_whisper_service()
+        tts_service = get_tts_service()
         
         # Shutdown voice services
         await whisper_service.shutdown()
