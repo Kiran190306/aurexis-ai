@@ -147,32 +147,55 @@ async def liveness_check() -> dict[str, str]:
 @app.get("/health/ready")
 async def readiness_check() -> JSONResponse:
     """Readiness endpoint: verifies every required runtime dependency."""
-    checks = {"database": "failed", "redis": "failed", "ai_engine": "failed"}
+    checks = {"database": "failed", "redis": "skipped", "ai_engine": "skipped"}
 
     try:
-        from app.core.database import engine
-        async with engine.connect() as connection:
-            await connection.execute(text("SELECT 1"))
-        checks["database"] = "ok"
+        from app.core.database import _get_engine
+        from sqlalchemy import text
+        import asyncio
+
+        engine = _get_engine()
+        # Add timeout to prevent hanging
+        try:
+            async with asyncio.timeout(5.0):
+                async with engine.connect() as connection:
+                    await connection.execute(text("SELECT 1"))
+            checks["database"] = "ok"
+        except asyncio.TimeoutError:
+            logger.bind(check="database").warning("Readiness check timed out")
     except Exception as exc:
         logger.bind(check="database", error=str(exc)).warning("Readiness check failed")
 
+    # Redis check - optional for free tier
     redis_client = None
     try:
         from redis import asyncio as redis_asyncio
-        redis_client = redis_asyncio.from_url(settings.REDIS_URL, socket_connect_timeout=2)
-        await redis_client.ping()
-        checks["redis"] = "ok"
+        import asyncio
+
+        # Add timeout to prevent hanging
+        try:
+            async with asyncio.timeout(5.0):
+                redis_client = redis_asyncio.from_url(settings.REDIS_URL, socket_connect_timeout=2, socket_timeout=2)
+                await redis_client.ping()
+            checks["redis"] = "ok"
+        except asyncio.TimeoutError:
+            logger.bind(check="redis").warning("Readiness check timed out")
+            checks["redis"] = "skipped"
     except Exception as exc:
         logger.bind(check="redis", error=str(exc)).warning("Readiness check failed")
+        checks["redis"] = "skipped"
     finally:
         if redis_client is not None:
-            await redis_client.aclose()
+            try:
+                await redis_client.aclose()
+            except Exception:
+                pass
 
     if getattr(app.state, "ai_engine_ready", False):
         checks["ai_engine"] = "ok"
 
-    is_ready = all(value == "ok" for value in checks.values())
+    # Consider ready if database is ok and redis/ai are either ok or skipped
+    is_ready = checks["database"] == "ok" and checks["redis"] in ["ok", "skipped"]
     payload = {"status": "ready" if is_ready else "not_ready", "checks": checks}
     return JSONResponse(
         status_code=status.HTTP_200_OK if is_ready else status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -207,13 +207,13 @@ class WhisperService:
             logger.error(f"Streaming transcription failed: {e}")
             raise
     
-    def _detect_language(self, audio: np.ndarray) -> str:
+    def _detect_language(self, audio: Any) -> str:
         """Detect language from audio (simplified)."""
         # In production, use Whisper's built-in language detection
         # For now, return default language
         return self.language or "en"
     
-    def _calculate_confidence(self, audio: np.ndarray, transcription: str) -> float:
+    def _calculate_confidence(self, audio: Any, transcription: str) -> float:
         """Calculate confidence score for transcription."""
         # Simplified confidence based on audio quality and transcription length
         rms = audio_manager.calculate_rms(audio)
