@@ -75,7 +75,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
+    openapi_url="/openapi.json",
     lifespan=lifespan,
 )
 configure_tracing(app)
