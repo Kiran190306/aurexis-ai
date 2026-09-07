@@ -25,11 +25,13 @@ ENTRYPOINT ["/usr/local/bin/audit-dependencies"]
 
 FROM dependencies AS runtime
 COPY . /app/
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN useradd --create-home --uid 1000 appuser \
     && mkdir -p /app/logs /app/data \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && chmod +x /app/docker-entrypoint.sh
 USER appuser
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD curl --fail http://localhost:8000/health/live || exit 1
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/docker-entrypoint.sh"]

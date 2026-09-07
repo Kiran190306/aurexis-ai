@@ -21,7 +21,6 @@ services:
     runtime: docker
     dockerfilePath: ./deploy/docker/backend/Dockerfile
     dockerContext: ./backend
-    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health/ready
     envVars:
       - key: APP_ENV
