@@ -20,9 +20,16 @@ if config.config_file_name is not None:
 
 # Alembic's synchronous migration engine cannot use asyncpg. The runtime keeps
 # asyncpg; migrations deliberately use the installed psycopg2 driver.
-sync_database_url = settings.DATABASE_URL.replace(
-    "postgresql+asyncpg://", "postgresql+psycopg2://", 1
-)
+if settings.DATABASE_URL.startswith("postgresql+asyncpg://"):
+    sync_database_url = settings.DATABASE_URL.replace(
+        "postgresql+asyncpg://", "postgresql+psycopg2://", 1
+    )
+elif settings.DATABASE_URL.startswith("postgresql://"):
+    sync_database_url = settings.DATABASE_URL.replace(
+        "postgresql://", "postgresql+psycopg2://", 1
+    )
+else:
+    sync_database_url = settings.DATABASE_URL
 config.set_main_option("sqlalchemy.url", sync_database_url)
 
 # Add your model's MetaData object here for 'autogenerate' support
