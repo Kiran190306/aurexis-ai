@@ -2,6 +2,14 @@
 set -e
 
 echo "Starting database migrations..."
+echo "Working directory: $(pwd)"
+echo "Alembic files:"
+ls -la /app/alembic/versions/
+echo "Running alembic heads:"
+alembic heads
+echo "Running alembic history:"
+alembic history
+echo "Running alembic upgrade head:"
 alembic upgrade head
 MIGRATION_STATUS=$?
 echo "Migration exit status: $MIGRATION_STATUS"
