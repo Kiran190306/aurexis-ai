@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool
 from typing import AsyncGenerator, Optional
+from loguru import logger
 
 from app.core.config import settings
 
@@ -36,6 +37,9 @@ def _get_engine():
     global _engine, _AsyncSessionLocal
     if _engine is None:
         engine_kwargs = _get_engine_kwargs()
+        # Log database URL without credentials for debugging
+        safe_url = settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else settings.DATABASE_URL
+        logger.info(f"Creating database engine for: {safe_url}")
         _engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
         _AsyncSessionLocal = async_sessionmaker(
             _engine,
@@ -44,6 +48,7 @@ def _get_engine():
             autocommit=False,
             autoflush=False,
         )
+        logger.info("Database engine created successfully")
     return _engine
 
 

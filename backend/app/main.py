@@ -53,6 +53,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.info("Database initialized via create_all()")
     else:
         logger.info("Production mode - skipping create_all, relying on Alembic migrations")
+        # Verify users table exists in production
+        try:
+            from app.core.database import _get_engine
+            engine = _get_engine()
+            async with engine.connect() as connection:
+                result = await connection.execute(text(
+                    "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+                ))
+                users_table_exists = result.scalar()
+                logger.info(f"Users table exists: {users_table_exists}")
+                if not users_table_exists:
+                    logger.error("CRITICAL: users table does not exist - Alembic migration may have failed")
+        except Exception as e:
+            logger.error(f"Error checking users table existence: {e}")
     
     # AI Engine initialization is now lazy - defer to first use
     # This prevents blocking startup on external AI provider connections

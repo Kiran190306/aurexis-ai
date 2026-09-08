@@ -24,7 +24,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 },
             )
         except SQLAlchemyError as e:
-            logger.error(f"Database error: {e}")
+            logger.error(f"Database error: {e}", exc_info=True)
             return JSONResponse(
                 status_code=500,
                 content={

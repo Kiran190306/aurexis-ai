@@ -3,6 +3,8 @@ set -e
 
 echo "Running database migrations..."
 alembic upgrade head
+echo "Current Alembic revision:"
+alembic current
 
 echo "Database migrations completed successfully."
 echo "Starting Aurexis AI Backend..."
