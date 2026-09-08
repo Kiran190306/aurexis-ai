@@ -1,24 +1,50 @@
 #!/bin/sh
 set -e
 
-echo "Starting database migrations..."
+echo "=== ALEMBIC FORENSIC DIAGNOSTIC ==="
 echo "Working directory: $(pwd)"
-echo "Alembic files:"
-ls -la /app/alembic/versions/
-echo "Running alembic heads:"
+echo "=== /app CONTENTS ==="
+ls -la /app
+echo "=== ALEMBIC DIRECTORY ==="
+ls -la /app/alembic
+echo "=== ALEMBIC VERSIONS ==="
+find /app/alembic -maxdepth 2 -type f -print
+
+echo "=== ALEMBIC HEADS ==="
 alembic heads
-echo "Running alembic history:"
+HEAD_STATUS=$?
+echo "alembic heads exit status: $HEAD_STATUS"
+
+echo "=== ALEMBIC HISTORY ==="
 alembic history
-echo "Running alembic upgrade head:"
-alembic upgrade head
-MIGRATION_STATUS=$?
-echo "Migration exit status: $MIGRATION_STATUS"
-if [ $MIGRATION_STATUS -ne 0 ]; then
-    echo "ERROR: Database migration failed with status $MIGRATION_STATUS"
-    exit $MIGRATION_STATUS
-fi
-echo "Current Alembic revision:"
+HISTORY_STATUS=$?
+echo "alembic history exit status: $HISTORY_STATUS"
+
+echo "=== ALEMBIC CURRENT ==="
 alembic current
+CURRENT_STATUS=$?
+echo "alembic current exit status: $CURRENT_STATUS"
+
+echo "=== ALEMBIC CURRENT VERBOSE ==="
+alembic current --verbose
+VERBOSE_STATUS=$?
+echo "alembic current verbose exit status: $VERBOSE_STATUS"
+
+echo "=== ALEMBIC UPGRADE SQL ==="
+alembic upgrade head --sql
+SQL_STATUS=$?
+echo "alembic upgrade --sql exit status: $SQL_STATUS"
+
+echo "=== ALEMBIC UPGRADE ==="
+alembic upgrade head
+UPGRADE_STATUS=$?
+echo "alembic upgrade exit status: $UPGRADE_STATUS"
+
+echo "=== ALEMBIC CURRENT AFTER UPGRADE ==="
+alembic current
+POST_STATUS=$?
+echo "alembic current after upgrade exit status: $POST_STATUS"
+
 echo "Database migrations completed successfully."
 echo "Starting Aurexis AI Backend..."
 
