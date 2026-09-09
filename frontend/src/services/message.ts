@@ -57,6 +57,7 @@ export interface MessageCreate {
   tool_response?: Record<string, unknown> | null
   metadata?: Record<string, unknown> | null
   parent_message_id?: number | null
+  trigger_ai?: boolean
 }
 
 export interface MessageUpdate {

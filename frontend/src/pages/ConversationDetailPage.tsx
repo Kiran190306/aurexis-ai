@@ -68,19 +68,29 @@ export default function ConversationDetailPage() {
     setMessage('')
 
     try {
-      // Create user message
+      // Create user message with AI trigger
       const createdMessage = await MessageService.createMessage({
         conversation_id: conversationId,
         role: MessageRole.USER,
         content: userMessage,
         message_type: 'text' as any,
+        trigger_ai: true,
       })
 
       // Add user message to list
       setMessages(prev => [...prev, createdMessage])
 
-      // TODO: Trigger AI response if backend supports it
-      // This would typically call an agent execution endpoint
+      // Reload messages after a short delay to get the assistant response
+      // The backend creates the assistant message synchronously
+      setTimeout(async () => {
+        try {
+          const updatedMessages = await MessageService.listConversationMessages(conversationId)
+          setMessages(updatedMessages)
+        } catch (err) {
+          console.error('Failed to reload messages:', err)
+        }
+      }, 1000)
+
     } catch (err) {
       setError('Failed to send message')
       setMessage(userMessage) // Restore message on error
@@ -173,6 +183,17 @@ export default function ConversationDetailPage() {
               </div>
             </div>
           ))
+        )}
+        {/* AI processing indicator */}
+        {isSending && (
+          <div className="flex justify-start">
+            <div className="bg-card border border-border p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">AI is thinking...</p>
+              </div>
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>

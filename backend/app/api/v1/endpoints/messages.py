@@ -6,7 +6,7 @@ from typing import List, Optional, Any
 
 from app.core.database import get_db
 from app.core.security import get_current_user_id
-from app.models.conversation import Conversation, Message
+from app.models.conversation import Conversation, Message, MessageRole
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -26,6 +26,7 @@ class MessageCreate(BaseModel):
     tool_response: Optional[dict] = None
     metadata: Optional[dict] = None
     parent_message_id: Optional[int] = None
+    trigger_ai: bool = False  # Whether to trigger AI agent execution
 
 
 class MessageUpdate(BaseModel):
@@ -73,7 +74,7 @@ async def create_message(
     current_user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Message:
-    """Create a new message."""
+    """Create a new message. Optionally trigger AI agent execution."""
     # Verify conversation belongs to user
     result = await db.execute(
         select(Conversation)
@@ -81,13 +82,13 @@ async def create_message(
         .where(Conversation.user_id == current_user_id)
     )
     conversation = result.scalar_one_or_none()
-    
+
     if not conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Conversation not found",
         )
-    
+
     message = Message(
         conversation_id=message_data.conversation_id,
         user_id=current_user_id,
@@ -104,18 +105,93 @@ async def create_message(
         metadata=message_data.metadata,
         parent_message_id=message_data.parent_message_id,
     )
-    
+
     db.add(message)
-    
+
     # Update conversation stats
     conversation.message_count += 1  # type: ignore[assignment]
     conversation.last_message_at = message.created_at  # type: ignore[assignment]
-    
+
     await db.commit()
     await db.refresh(message)
-    
+
     logger.info(f"Message created: {message.id}")
-    
+
+    # Trigger AI execution if requested and message is from user
+    if message_data.trigger_ai and message_data.role == MessageRole.USER.value:
+        try:
+            # Import AI engine and agent execution
+            from app.ai.engine import ai_engine
+            from app.ai.base import Message as AIMessage
+            from app.ai.setup import get_ai_engine
+
+            # Get AI engine
+            engine = get_ai_engine()
+
+            # Check if any providers are available
+            if not engine.list_providers():
+                logger.warning("No AI providers configured, skipping AI response generation")
+                return message
+
+            # Get conversation history for context
+            history_result = await db.execute(
+                select(Message)
+                .where(Message.conversation_id == message_data.conversation_id)
+                .where(Message.is_deleted == False)
+                .order_by(Message.created_at.asc())
+                .limit(10)  # Last 10 messages for context
+            )
+            history_messages = list(history_result.scalars().all())
+
+            # Build AI messages
+            ai_messages: List[AIMessage] = []
+            
+            # Add system prompt if conversation has one
+            if conversation.system_prompt:
+                ai_messages.append(AIMessage(role="system", content=conversation.system_prompt))
+            
+            # Add conversation history
+            for hist_msg in history_messages:
+                role = "user" if hist_msg.role == MessageRole.USER else "assistant"
+                ai_messages.append(AIMessage(role=role, content=hist_msg.content))
+
+            # Generate AI response
+            try:
+                ai_response = await engine.generate(
+                    messages=ai_messages,
+                    temperature=conversation.temperature / 100.0,  # Convert 0-100 to 0.0-1.0
+                    max_tokens=conversation.max_tokens
+                )
+
+                # Create assistant message
+                assistant_message = Message(
+                    conversation_id=message_data.conversation_id,
+                    user_id=current_user_id,
+                    role=MessageRole.ASSISTANT,
+                    content=ai_response.content,
+                    message_type="text",
+                    metadata_json={"triggered_by_message_id": message.id}
+                )
+
+                db.add(assistant_message)
+                conversation.message_count += 1  # type: ignore[assignment]
+                conversation.last_message_at = assistant_message.created_at  # type: ignore[assignment]
+
+                await db.commit()
+                await db.refresh(assistant_message)
+
+                logger.info(f"Assistant message created: {assistant_message.id}")
+
+            except Exception as ai_error:
+                logger.error(f"AI generation failed: {ai_error}", exc_info=True)
+                # Don't fail the user message if AI fails
+                # Optionally create an error message
+                pass
+
+        except Exception as e:
+            logger.error(f"Failed to trigger AI execution: {e}", exc_info=True)
+            # Don't fail the user message if AI trigger fails
+
     return message
 
 
