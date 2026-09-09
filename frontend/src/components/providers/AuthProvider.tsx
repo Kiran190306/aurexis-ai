@@ -49,12 +49,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const register = async (email: string, username: string, password: string) => {
-    const data = await apiRequest<User>('/api/v1/auth/register', {
+    await apiRequest<User>('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, username, password }),
     })
 
-    setUser(data)
+    // Auto-login after registration
+    const loginData = await apiRequest<{ access_token: string }>('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    })
+    const authenticatedUser = await apiRequest<User>('/api/v1/auth/me', {}, loginData.access_token)
+
+    setToken(loginData.access_token)
+    setUser(authenticatedUser)
+    persistAuthSession(loginData.access_token, authenticatedUser)
   }
 
   const logout = () => {

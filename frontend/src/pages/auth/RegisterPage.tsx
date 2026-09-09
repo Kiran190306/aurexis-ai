@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
     try {
       await register(email, username, password)
-      navigate('/login')
+      navigate('/')
     } catch (err) {
       setError('Registration failed. Please try again.')
     } finally {

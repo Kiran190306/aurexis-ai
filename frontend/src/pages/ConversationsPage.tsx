@@ -1,13 +1,42 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Search, MoreVertical } from 'lucide-react'
+import { ConversationService, Conversation } from '../services/conversation'
 
 export default function ConversationsPage() {
-  const conversations = [
-    { id: 1, title: 'Project Planning', messageCount: 24, lastMessage: 'Let me help you plan the architecture...', updatedAt: '2 hours ago', status: 'active' },
-    { id: 2, title: 'Code Review', messageCount: 15, lastMessage: 'The code looks good overall...', updatedAt: '5 hours ago', status: 'active' },
-    { id: 3, title: 'Research Task', messageCount: 8, lastMessage: 'I found several relevant papers...', updatedAt: '1 day ago', status: 'archived' },
-    { id: 4, title: 'Debug Session', messageCount: 32, lastMessage: 'Let me check the error logs...', updatedAt: '2 days ago', status: 'active' },
-  ]
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const data = await ConversationService.listConversations()
+        setConversations(data)
+      } catch (err) {
+        setError('Failed to load conversations')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadConversations()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -47,17 +76,17 @@ export default function ConversationsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground">{conv.title}</h3>
-                  {conv.status === 'archived' && (
+                  {!conv.is_active && (
                     <span className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded-full">
                       Archived
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{conv.lastMessage}</p>
+                <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{conv.last_message || conv.description || 'No messages yet'}</p>
                 <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>{conv.messageCount} messages</span>
+                  <span>{conv.message_count || 0} messages</span>
                   <span>•</span>
-                  <span>{conv.updatedAt}</span>
+                  <span>{new Date(conv.updated_at).toLocaleString()}</span>
                 </div>
               </div>
               <button className="p-2 hover:bg-accent rounded-md transition-colors">
@@ -73,7 +102,7 @@ export default function ConversationsPage() {
         <div className="text-center py-12">
           <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No conversations yet</h3>
-          <p className="text-muted-foreground mb-4">Start your first conversation with Jarvis AI</p>
+          <p className="text-muted-foreground mb-4">Start your first conversation with Aurexis AI</p>
           <Link
             to="/conversations/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"

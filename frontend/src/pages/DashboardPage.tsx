@@ -1,21 +1,37 @@
+import { useState, useEffect } from 'react'
 import { useAuth } from '../components/providers/AuthProvider'
 import { MessageSquare, Plus, Clock, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { ConversationService, Conversation } from '../services/conversation'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const [conversations, setConversations] = useState<Conversation[]>([])
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const data = await ConversationService.listConversations()
+        setConversations(data.slice(0, 3)) // Show only recent 3
+      } catch (err) {
+        console.error('Failed to load conversations')
+      }
+    }
+    loadConversations()
+  }, [])
 
   const stats = [
-    { label: 'Total Conversations', value: '12', icon: MessageSquare, color: 'text-blue-500' },
-    { label: 'Messages Today', value: '45', icon: TrendingUp, color: 'text-green-500' },
-    { label: 'Active Sessions', value: '3', icon: Clock, color: 'text-purple-500' },
+    { label: 'Total Conversations', value: conversations.length.toString(), icon: MessageSquare, color: 'text-blue-500' },
+    { label: 'Messages Today', value: '0', icon: TrendingUp, color: 'text-green-500' },
+    { label: 'Active Sessions', value: conversations.filter(c => c.is_active).length.toString(), icon: Clock, color: 'text-purple-500' },
   ]
 
-  const recentConversations = [
-    { id: 1, title: 'Project Planning', lastMessage: 'Let me help you plan the architecture...', time: '2 hours ago' },
-    { id: 2, title: 'Code Review', lastMessage: 'The code looks good overall...', time: '5 hours ago' },
-    { id: 3, title: 'Research Task', lastMessage: 'I found several relevant papers...', time: '1 day ago' },
-  ]
+  const recentConversations = conversations.map(conv => ({
+    id: conv.id,
+    title: conv.title,
+    lastMessage: conv.last_message || conv.description || 'No messages yet',
+    time: new Date(conv.updated_at).toLocaleString()
+  }))
 
   return (
     <div className="space-y-8">
