@@ -15,10 +15,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        response.headers.setdefault(
-            "Content-Security-Policy",
-            "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
-        )
+        
+        # Route-specific CSP for docs endpoint to allow Swagger UI CDN resources
+        if request.url.path in ["/docs", "/redoc"]:
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "img-src 'self' data: https://fastapi.tiangolo.com; "
+                "object-src 'none'; "
+                "base-uri 'self'; "
+                "frame-ancestors 'none'"
+            )
+        else:
+            csp = "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+        
+        response.headers.setdefault("Content-Security-Policy", csp)
         response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
         response.headers.setdefault(
             "Permissions-Policy",
