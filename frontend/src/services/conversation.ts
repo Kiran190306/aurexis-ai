@@ -1,16 +1,5 @@
 import { apiRequest } from './api'
 
-export interface Message {
-  id: number
-  uuid: string
-  conversation_id: number
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  metadata: Record<string, unknown> | null
-  created_at: string
-  updated_at: string
-}
-
 export interface Conversation {
   id: number
   uuid: string
@@ -18,6 +7,11 @@ export interface Conversation {
   title: string
   description: string | null
   agent_id: number | null
+  model: string
+  temperature: number
+  max_tokens: number
+  system_prompt: string | null
+  tags: string[]
   is_active: boolean
   created_at: string
   updated_at: string
@@ -29,13 +23,6 @@ export interface ConversationCreate {
   title: string
   description?: string
   agent_id?: number
-}
-
-export interface MessageCreate {
-  conversation_id: number
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  metadata?: Record<string, unknown>
 }
 
 export class ConversationService {
@@ -66,17 +53,6 @@ export class ConversationService {
   static async deleteConversation(conversationId: number): Promise<{ message: string }> {
     return apiRequest<{ message: string }>(`${this.BASE_PATH}/${conversationId}`, {
       method: 'DELETE',
-    })
-  }
-
-  static async getMessages(conversationId: number): Promise<Message[]> {
-    return apiRequest<Message[]>(`${this.BASE_PATH}/${conversationId}/messages`)
-  }
-
-  static async createMessage(conversationId: number, request: Omit<MessageCreate, 'conversation_id'>): Promise<Message> {
-    return apiRequest<Message>(`${this.BASE_PATH}/${conversationId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ ...request, conversation_id: conversationId }),
     })
   }
 }
