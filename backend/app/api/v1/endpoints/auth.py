@@ -50,7 +50,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)) 
         username=user_data.username,
         hashed_password=get_password_hash(user_data.password),
         full_name=user_data.full_name,
-        role=UserRole.USER,
+        role=UserRole.user,
         is_active=True,
         is_verified=False,
     )

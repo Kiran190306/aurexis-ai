@@ -9,16 +9,16 @@ from app.core.database import Base
 
 
 class UserRole(PyEnum):
-    ADMIN = "admin"
-    USER = "user"
-    MODERATOR = "moderator"
-    DEVELOPER = "developer"
+    admin = "admin"
+    user = "user"
+    moderator = "moderator"
+    developer = "developer"
 
 
 class OAuthProvider(PyEnum):
-    GOOGLE = "google"
-    GITHUB = "github"
-    MICROSOFT = "microsoft"
+    google = "google"
+    github = "github"
+    microsoft = "microsoft"
 
 
 class User(Base):
@@ -39,7 +39,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.user)
     
     # OAuth
     oauth_provider: Mapped[Optional[OAuthProvider]] = mapped_column(Enum(OAuthProvider), nullable=True)
