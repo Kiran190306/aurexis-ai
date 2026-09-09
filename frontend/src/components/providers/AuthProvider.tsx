@@ -14,7 +14,7 @@ interface AuthContextType {
   token: string | null
   login: (email: string, password: string) => Promise<void>
   register: (email: string, username: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   isLoading: boolean
 }
 
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string) => {
-    const data = await apiRequest<{ access_token: string }>('/api/v1/auth/login', {
+    const data = await apiRequest<{ access_token: string; refresh_token: string }>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setToken(data.access_token)
     setUser(authenticatedUser)
-    persistAuthSession(data.access_token, authenticatedUser)
+    persistAuthSession(data.access_token, data.refresh_token, authenticatedUser)
   }
 
   const register = async (email: string, username: string, password: string) => {
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     // Auto-login after registration
-    const loginData = await apiRequest<{ access_token: string }>('/api/v1/auth/login', {
+    const loginData = await apiRequest<{ access_token: string; refresh_token: string }>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
@@ -63,13 +63,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setToken(loginData.access_token)
     setUser(authenticatedUser)
-    persistAuthSession(loginData.access_token, authenticatedUser)
+    persistAuthSession(loginData.access_token, loginData.refresh_token, authenticatedUser)
   }
 
-  const logout = () => {
-    setUser(null)
-    setToken(null)
-    clearAuthSession()
+  const logout = async () => {
+    try {
+      await apiRequest('/api/v1/auth/logout', { method: 'POST' })
+    } catch (error) {
+      // Ignore logout errors and clear local session
+      console.error('Logout error:', error)
+    } finally {
+      setUser(null)
+      setToken(null)
+      clearAuthSession()
+    }
   }
 
   return (

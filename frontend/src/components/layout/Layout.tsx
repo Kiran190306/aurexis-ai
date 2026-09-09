@@ -94,7 +94,7 @@ export default function Layout() {
               </div>
             </div>
             <button
-              onClick={logout}
+              onClick={() => logout().catch(console.error)}
               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
             >
               <LogOut className="h-4 w-4" />
