@@ -103,6 +103,7 @@ export function ExecutionView({ executionId, onClose }: ExecutionViewProps) {
       clearInterval(interval)
       stopPolling()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [executionId, taskId])
 
   const getStatusColor = (status: ExecutionStatus) => {

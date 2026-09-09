@@ -141,6 +141,7 @@ export function AgentExecution({ planUuid, onClose }: AgentExecutionProps) {
       }, 2000)
       return () => clearInterval(interval)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlanUuid, plan?.status, taskId])
 
   const getStatusColor = (status: ExecutionStatus) => {

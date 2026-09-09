@@ -35,6 +35,7 @@ export function AgentDetails({ agentId, onEdit, onExecute, onClose }: AgentDetai
 
   useEffect(() => {
    loadData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId])
 
   const getStatusColor = (status: string) => {
