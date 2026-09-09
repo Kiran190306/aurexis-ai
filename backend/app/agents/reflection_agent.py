@@ -110,7 +110,7 @@ Output as JSON with scores and detailed feedback."""
         import json
         try:
             evaluation = json.loads(response.content)
-        except:
+        except (json.JSONDecodeError, ValueError):
             evaluation = {
                 "overall_score": 0.5,
                 "feedback": response.content
@@ -188,7 +188,7 @@ Output as JSON with score and detailed analysis."""
         import json
         try:
             analysis = json.loads(response.content)
-        except:
+        except (json.JSONDecodeError, ValueError):
             analysis = {
                 "hallucination_probability": 0.5,
                 "analysis": response.content
@@ -247,7 +247,7 @@ Output as JSON with score and detailed analysis."""
         import json
         try:
             verification = json.loads(response.content)
-        except:
+        except (json.JSONDecodeError, ValueError):
             verification = {
                 "reasoning_score": 0.5,
                 "analysis": response.content
@@ -308,7 +308,7 @@ Output as JSON with detailed suggestions."""
         import json
         try:
             suggestions = json.loads(response.content)
-        except:
+        except (json.JSONDecodeError, ValueError):
             suggestions = {
                 "suggestions": response.content
             }

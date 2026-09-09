@@ -320,7 +320,7 @@ class MemoryAgent(BaseAgent):
         import json
         try:
             return json.loads(response.content)  # type: ignore[no-any-return]
-        except:
+        except (json.JSONDecodeError, ValueError):
             return query.split()
     
     def _memory_matches_query(self, memory: Dict[str, Any], search_terms: List[str]) -> bool:
@@ -363,7 +363,7 @@ Return ranked results as JSON array."""
         import json
         try:
             return json.loads(response.content)  # type: ignore[no-any-return]
-        except:
+        except (json.JSONDecodeError, ValueError):
             return results
     
     async def _compress_single_memory(self, memory: Dict[str, Any], compression_ratio: float) -> Dict[str, Any]:

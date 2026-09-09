@@ -172,7 +172,7 @@ Output as JSON with tool names and reasoning."""
         import json
         try:
             selection = json.loads(response.content)
-        except:
+        except (json.JSONDecodeError, ValueError):
             selection = {"tool": available_tools[0] if available_tools else None, "reasoning": response.content}
         
         return AgentResponse(

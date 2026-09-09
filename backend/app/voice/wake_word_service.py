@@ -78,7 +78,7 @@ class WakeWordService:
         if self.detector is not None and self.detector != "fallback":
             try:
                 self.detector.delete()
-            except:
+            except Exception:
                 pass
             self.detector = None
         
