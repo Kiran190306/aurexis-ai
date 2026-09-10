@@ -116,13 +116,6 @@ async def create_message(
     await db.refresh(message)
 
     logger.info(f"Message created: {message.id}")
-    logger.info(f"Message role: {message.role}")
-    logger.info(f"Message role type: {type(message.role)}")
-    logger.info(f"Message role value: {message.role.value if hasattr(message.role, 'value') else message.role}")
-    logger.info(f"Message data trigger_ai: {message_data.trigger_ai}")
-    logger.info(f"MessageRole.user.value: {MessageRole.user.value}")
-    logger.info(f"MessageRole.user: {MessageRole.user}")
-    logger.info(f"Comparison result: {message_data.trigger_ai and message.role == MessageRole.user}")
 
     # Trigger AI execution if requested and message is from user
     assistant_message_id = None
@@ -168,13 +161,15 @@ async def create_message(
                 
                 # Add conversation history
                 for hist_msg in history_messages:
-                    role = "user" if str(hist_msg.role) == str(MessageRole.user) else "assistant"
+                    role = "user" if hist_msg.role == MessageRole.user else "assistant"
                     ai_messages.append(AIMessage(role=role, content=hist_msg.content))
                 logger.info(f"AI messages built: {len(ai_messages)} messages")
 
                 # Generate AI response
                 try:
                     logger.info("Starting AI generation...")
+                    logger.info(f"AI messages for generation: {[(m.role, m.content[:50]) for m in ai_messages]}")
+                    
                     ai_response = await engine.generate(
                         messages=ai_messages,
                         temperature=conversation.temperature / 100.0,  # Convert 0-100 to 0.0-1.0
@@ -186,7 +181,7 @@ async def create_message(
                     assistant_message = Message(
                         conversation_id=message_data.conversation_id,
                         user_id=current_user_id,
-                        role=MessageRole.assistant.value,
+                        role=MessageRole.assistant,
                         content=ai_response.content,
                         message_type="text",
                         metadata_json={"triggered_by_message_id": message.id}
