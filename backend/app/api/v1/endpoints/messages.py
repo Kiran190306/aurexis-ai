@@ -116,6 +116,13 @@ async def create_message(
     await db.refresh(message)
 
     logger.info(f"Message created: {message.id}")
+    logger.info(f"Message role: {message.role}")
+    logger.info(f"Message role type: {type(message.role)}")
+    logger.info(f"Message role value: {message.role.value if hasattr(message.role, 'value') else message.role}")
+    logger.info(f"Message data trigger_ai: {message_data.trigger_ai}")
+    logger.info(f"MessageRole.user.value: {MessageRole.user.value}")
+    logger.info(f"MessageRole.user: {MessageRole.user}")
+    logger.info(f"Comparison result: {message_data.trigger_ai and message.role == MessageRole.user.value}")
 
     # Trigger AI execution if requested and message is from user
     assistant_message_id = None
