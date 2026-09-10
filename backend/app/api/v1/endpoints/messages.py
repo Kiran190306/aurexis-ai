@@ -14,9 +14,9 @@ router = APIRouter()
 
 class MessageCreate(BaseModel):
     conversation_id: int
-    role: str
+    role: str  # Expects lowercase values: "user", "assistant", "system", "tool"
     content: str
-    message_type: str = "text"
+    message_type: str = "text"  # Expects lowercase values: "text", "code", "image", "file", "system", "tool_call", "tool_response"
     code_language: Optional[str] = None
     code_content: Optional[str] = None
     image_url: Optional[str] = None
@@ -92,9 +92,9 @@ async def create_message(
     message = Message(
         conversation_id=message_data.conversation_id,
         user_id=current_user_id,
-        role=message_data.role,
+        role=message_data.role,  # Store the string value directly - SQLAlchemy will handle enum conversion
         content=message_data.content,
-        message_type=message_data.message_type,
+        message_type=message_data.message_type,  # Store the string value directly
         code_language=message_data.code_language,
         code_content=message_data.code_content,
         image_url=message_data.image_url,
@@ -122,7 +122,7 @@ async def create_message(
     logger.info(f"Message data trigger_ai: {message_data.trigger_ai}")
     logger.info(f"MessageRole.user.value: {MessageRole.user.value}")
     logger.info(f"MessageRole.user: {MessageRole.user}")
-    logger.info(f"Comparison result: {message_data.trigger_ai and message.role == MessageRole.user.value}")
+    logger.info(f"Comparison result: {message_data.trigger_ai and message.role == MessageRole.user}")
 
     # Trigger AI execution if requested and message is from user
     assistant_message_id = None
@@ -168,7 +168,7 @@ async def create_message(
                 
                 # Add conversation history
                 for hist_msg in history_messages:
-                    role = "user" if hist_msg.role == MessageRole.user else "assistant"
+                    role = "user" if str(hist_msg.role) == str(MessageRole.user) else "assistant"
                     ai_messages.append(AIMessage(role=role, content=hist_msg.content))
                 logger.info(f"AI messages built: {len(ai_messages)} messages")
 
@@ -186,7 +186,7 @@ async def create_message(
                     assistant_message = Message(
                         conversation_id=message_data.conversation_id,
                         user_id=current_user_id,
-                        role=MessageRole.assistant,
+                        role=MessageRole.assistant.value,
                         content=ai_response.content,
                         message_type="text",
                         metadata_json={"triggered_by_message_id": message.id}
