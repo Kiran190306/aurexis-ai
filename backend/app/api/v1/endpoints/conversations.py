@@ -66,7 +66,7 @@ async def create_conversation(
         max_tokens=conversation_data.max_tokens,
         system_prompt=conversation_data.system_prompt,
         tags=conversation_data.tags,
-        status=ConversationStatus.ACTIVE,
+        status=ConversationStatus.active,
     )
     
     db.add(conversation)
@@ -158,7 +158,7 @@ async def delete_conversation(
         )
     
     conversation.deleted_at = datetime.utcnow()  # type: ignore[assignment]
-    conversation.status = ConversationStatus.DELETED  # type: ignore[assignment]
+    conversation.status = ConversationStatus.deleted  # type: ignore[assignment]
     
     await db.commit()
     

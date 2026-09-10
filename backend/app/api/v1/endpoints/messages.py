@@ -118,7 +118,7 @@ async def create_message(
     logger.info(f"Message created: {message.id}")
 
     # Trigger AI execution if requested and message is from user
-    if message_data.trigger_ai and message_data.role == MessageRole.USER.value:
+    if message_data.trigger_ai and message_data.role == MessageRole.user.value:
         try:
             # Import AI engine and agent execution
             from app.ai.engine import ai_engine
@@ -152,7 +152,7 @@ async def create_message(
             
             # Add conversation history
             for hist_msg in history_messages:
-                role = "user" if hist_msg.role == MessageRole.USER else "assistant"
+                role = "user" if hist_msg.role == MessageRole.user else "assistant"
                 ai_messages.append(AIMessage(role=role, content=hist_msg.content))
 
             # Generate AI response
@@ -167,7 +167,7 @@ async def create_message(
                 assistant_message = Message(
                     conversation_id=message_data.conversation_id,
                     user_id=current_user_id,
-                    role=MessageRole.ASSISTANT,
+                    role=MessageRole.assistant,
                     content=ai_response.content,
                     message_type="text",
                     metadata_json={"triggered_by_message_id": message.id}

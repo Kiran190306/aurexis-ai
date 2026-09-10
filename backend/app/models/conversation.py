@@ -8,27 +8,27 @@ from app.core.database import Base
 
 
 class ConversationStatus(PyEnum):
-    ACTIVE = "active"
-    ARCHIVED = "archived"
-    DELETED = "deleted"
-    PINNED = "pinned"
+    active = "active"
+    archived = "archived"
+    deleted = "deleted"
+    pinned = "pinned"
 
 
 class MessageType(PyEnum):
-    TEXT = "text"
-    CODE = "code"
-    IMAGE = "image"
-    FILE = "file"
-    SYSTEM = "system"
-    TOOL_CALL = "tool_call"
-    TOOL_RESPONSE = "tool_response"
+    text = "text"
+    code = "code"
+    image = "image"
+    file = "file"
+    system = "system"
+    tool_call = "tool_call"
+    tool_response = "tool_response"
 
 
 class MessageRole(PyEnum):
-    USER = "user"
-    ASSISTANT = "assistant"
-    SYSTEM = "system"
-    TOOL = "tool"
+    user = "user"
+    assistant = "assistant"
+    system = "system"
+    tool = "tool"
 
 
 class Conversation(Base):
@@ -41,7 +41,7 @@ class Conversation(Base):
     # Basic Info
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    status: Mapped[ConversationStatus] = mapped_column(Enum(ConversationStatus), default=ConversationStatus.ACTIVE)
+    status: Mapped[ConversationStatus] = mapped_column(Enum(ConversationStatus), default=ConversationStatus.active)
     
     # AI Configuration
     model = Column(String(50), default="gpt-4-turbo-preview")
@@ -81,7 +81,7 @@ class Message(Base):
     # Content
     role: Mapped[MessageRole] = mapped_column(Enum(MessageRole), nullable=False)
     content = Column(Text, nullable=False)
-    message_type: Mapped[MessageType] = mapped_column(Enum(MessageType), default=MessageType.TEXT)
+    message_type: Mapped[MessageType] = mapped_column(Enum(MessageType), default=MessageType.text)
     
     # Code-specific
     code_language = Column(String(50), nullable=True)

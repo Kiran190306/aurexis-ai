@@ -37,7 +37,7 @@ class ConversationService:
             "max_tokens": max_tokens,
             "system_prompt": system_prompt,
             "tags": tags or [],
-            "status": ConversationStatus.ACTIVE,
+            "status": ConversationStatus.active,
         }
         
         conversation = await self.conversation_repo.create(db, BaseModel(**conversation_data))
