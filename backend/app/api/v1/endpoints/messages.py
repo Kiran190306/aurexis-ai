@@ -118,6 +118,9 @@ async def create_message(
     logger.info(f"Message created: {message.id}")
 
     # Trigger AI execution if requested and message is from user
+    assistant_message_id = None
+    ai_error = None
+    
     if message_data.trigger_ai and message_data.role == MessageRole.user.value:
         logger.info(f"AI trigger requested for message {message.id}")
         try:
@@ -135,72 +138,83 @@ async def create_message(
             logger.info(f"Available AI providers: {providers}")
             if not providers:
                 logger.warning("No AI providers configured, skipping AI response generation")
-                return message
-
-            # Get conversation history for context
-            history_result = await db.execute(
-                select(Message)
-                .where(Message.conversation_id == message_data.conversation_id)
-                .where(Message.is_deleted == False)
-                .order_by(Message.created_at.asc())
-                .limit(10)  # Last 10 messages for context
-            )
-            history_messages = list(history_result.scalars().all())
-            logger.info(f"History messages count: {len(history_messages)}")
-
-            # Build AI messages
-            ai_messages: List[AIMessage] = []
-            
-            # Add system prompt if conversation has one
-            if conversation.system_prompt:
-                ai_messages.append(AIMessage(role="system", content=conversation.system_prompt))
-                logger.info("Added system prompt to AI messages")
-            
-            # Add conversation history
-            for hist_msg in history_messages:
-                role = "user" if hist_msg.role == MessageRole.user else "assistant"
-                ai_messages.append(AIMessage(role=role, content=hist_msg.content))
-            logger.info(f"AI messages built: {len(ai_messages)} messages")
-
-            # Generate AI response
-            try:
-                logger.info("Starting AI generation...")
-                ai_response = await engine.generate(
-                    messages=ai_messages,
-                    temperature=conversation.temperature / 100.0,  # Convert 0-100 to 0.0-1.0
-                    max_tokens=conversation.max_tokens
+                ai_error = "No AI providers configured"
+            else:
+                # Get conversation history for context
+                history_result = await db.execute(
+                    select(Message)
+                    .where(Message.conversation_id == message_data.conversation_id)
+                    .where(Message.is_deleted == False)
+                    .order_by(Message.created_at.asc())
+                    .limit(10)  # Last 10 messages for context
                 )
-                logger.info(f"AI response received: {ai_response.content[:100]}...")
+                history_messages = list(history_result.scalars().all())
+                logger.info(f"History messages count: {len(history_messages)}")
 
-                # Create assistant message
-                assistant_message = Message(
-                    conversation_id=message_data.conversation_id,
-                    user_id=current_user_id,
-                    role=MessageRole.assistant,
-                    content=ai_response.content,
-                    message_type="text",
-                    metadata_json={"triggered_by_message_id": message.id}
-                )
-                logger.info(f"Assistant message object created")
+                # Build AI messages
+                ai_messages: List[AIMessage] = []
+                
+                # Add system prompt if conversation has one
+                if conversation.system_prompt:
+                    ai_messages.append(AIMessage(role="system", content=conversation.system_prompt))
+                    logger.info("Added system prompt to AI messages")
+                
+                # Add conversation history
+                for hist_msg in history_messages:
+                    role = "user" if hist_msg.role == MessageRole.user else "assistant"
+                    ai_messages.append(AIMessage(role=role, content=hist_msg.content))
+                logger.info(f"AI messages built: {len(ai_messages)} messages")
 
-                db.add(assistant_message)
-                conversation.message_count += 1  # type: ignore[assignment]
-                conversation.last_message_at = assistant_message.created_at  # type: ignore[assignment]
+                # Generate AI response
+                try:
+                    logger.info("Starting AI generation...")
+                    ai_response = await engine.generate(
+                        messages=ai_messages,
+                        temperature=conversation.temperature / 100.0,  # Convert 0-100 to 0.0-1.0
+                        max_tokens=conversation.max_tokens
+                    )
+                    logger.info(f"AI response received: {ai_response.content[:100]}...")
 
-                await db.commit()
-                await db.refresh(assistant_message)
+                    # Create assistant message
+                    assistant_message = Message(
+                        conversation_id=message_data.conversation_id,
+                        user_id=current_user_id,
+                        role=MessageRole.assistant,
+                        content=ai_response.content,
+                        message_type="text",
+                        metadata_json={"triggered_by_message_id": message.id}
+                    )
+                    logger.info(f"Assistant message object created")
 
-                logger.info(f"Assistant message created: {assistant_message.id}")
+                    db.add(assistant_message)
+                    conversation.message_count += 1  # type: ignore[assignment]
+                    conversation.last_message_at = assistant_message.created_at  # type: ignore[assignment]
 
-            except Exception as ai_error:
-                logger.error(f"AI generation failed: {ai_error}", exc_info=True)
-                # Don't fail the user message if AI fails
-                # Optionally create an error message
-                pass
+                    await db.commit()
+                    await db.refresh(assistant_message)
+
+                    assistant_message_id = assistant_message.id
+                    logger.info(f"Assistant message created: {assistant_message.id}")
+
+                except Exception as generation_error:
+                    logger.error(f"AI generation failed: {generation_error}", exc_info=True)
+                    ai_error = str(generation_error)
+                    # Don't fail the user message if AI fails
 
         except Exception as e:
             logger.error(f"Failed to trigger AI execution: {e}", exc_info=True)
+            ai_error = str(e)
             # Don't fail the user message if AI trigger fails
+    
+    # Add AI status to message metadata
+    if message.metadata_json is None:
+        message.metadata_json = {}
+    message.metadata_json["ai_triggered"] = message_data.trigger_ai
+    message.metadata_json["ai_assistant_message_id"] = assistant_message_id
+    message.metadata_json["ai_error"] = ai_error
+    
+    await db.commit()
+    await db.refresh(message)
 
     return message
 
