@@ -57,25 +57,39 @@ async def create_conversation(
     db: AsyncSession = Depends(get_db),
 ) -> Conversation:
     """Create a new conversation."""
-    conversation = Conversation(
-        user_id=current_user_id,
-        title=conversation_data.title,
-        description=conversation_data.description,
-        model=conversation_data.model,
-        temperature=conversation_data.temperature,
-        max_tokens=conversation_data.max_tokens,
-        system_prompt=conversation_data.system_prompt,
-        tags=conversation_data.tags,
-        status=ConversationStatus.active,
-    )
-    
-    db.add(conversation)
-    await db.commit()
-    await db.refresh(conversation)
-    
-    logger.info(f"Conversation created: {conversation.id}")
-    
-    return conversation
+    try:
+        logger.info(f"Creating conversation for user {current_user_id}")
+        logger.info(f"Conversation data: {conversation_data.model_dump()}")
+        
+        conversation = Conversation(
+            user_id=current_user_id,
+            title=conversation_data.title,
+            description=conversation_data.description,
+            model=conversation_data.model,
+            temperature=conversation_data.temperature,
+            max_tokens=conversation_data.max_tokens,
+            system_prompt=conversation_data.system_prompt,
+            tags=conversation_data.tags,
+            status=ConversationStatus.active,
+        )
+        
+        logger.info(f"Conversation object created: {conversation}")
+        
+        db.add(conversation)
+        logger.info(f"Conversation added to session")
+        
+        await db.commit()
+        logger.info(f"Conversation committed")
+        
+        await db.refresh(conversation)
+        logger.info(f"Conversation refreshed: {conversation.id}")
+        
+        logger.info(f"Conversation created: {conversation.id}")
+        
+        return conversation
+    except Exception as e:
+        logger.error(f"Error creating conversation: {e}", exc_info=True)
+        raise
 
 
 @router.get("/{conversation_id}", response_model=None)
