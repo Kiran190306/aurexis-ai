@@ -119,6 +119,7 @@ async def create_message(
 
     # Trigger AI execution if requested and message is from user
     if message_data.trigger_ai and message_data.role == MessageRole.user.value:
+        logger.info(f"AI trigger requested for message {message.id}")
         try:
             # Import AI engine and agent execution
             from app.ai.engine import ai_engine
@@ -127,9 +128,12 @@ async def create_message(
 
             # Get AI engine
             engine = get_ai_engine()
+            logger.info(f"AI engine obtained: {engine}")
 
             # Check if any providers are available
-            if not engine.list_providers():
+            providers = engine.list_providers()
+            logger.info(f"Available AI providers: {providers}")
+            if not providers:
                 logger.warning("No AI providers configured, skipping AI response generation")
                 return message
 
@@ -142,6 +146,7 @@ async def create_message(
                 .limit(10)  # Last 10 messages for context
             )
             history_messages = list(history_result.scalars().all())
+            logger.info(f"History messages count: {len(history_messages)}")
 
             # Build AI messages
             ai_messages: List[AIMessage] = []
@@ -149,19 +154,23 @@ async def create_message(
             # Add system prompt if conversation has one
             if conversation.system_prompt:
                 ai_messages.append(AIMessage(role="system", content=conversation.system_prompt))
+                logger.info("Added system prompt to AI messages")
             
             # Add conversation history
             for hist_msg in history_messages:
                 role = "user" if hist_msg.role == MessageRole.user else "assistant"
                 ai_messages.append(AIMessage(role=role, content=hist_msg.content))
+            logger.info(f"AI messages built: {len(ai_messages)} messages")
 
             # Generate AI response
             try:
+                logger.info("Starting AI generation...")
                 ai_response = await engine.generate(
                     messages=ai_messages,
                     temperature=conversation.temperature / 100.0,  # Convert 0-100 to 0.0-1.0
                     max_tokens=conversation.max_tokens
                 )
+                logger.info(f"AI response received: {ai_response.content[:100]}...")
 
                 # Create assistant message
                 assistant_message = Message(
@@ -172,6 +181,7 @@ async def create_message(
                     message_type="text",
                     metadata_json={"triggered_by_message_id": message.id}
                 )
+                logger.info(f"Assistant message object created")
 
                 db.add(assistant_message)
                 conversation.message_count += 1  # type: ignore[assignment]
