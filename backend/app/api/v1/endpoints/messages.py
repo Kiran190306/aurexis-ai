@@ -169,13 +169,17 @@ async def create_message(
                 try:
                     logger.info("Starting AI generation...")
                     logger.info(f"AI messages for generation: {[(m.role, m.content[:50]) for m in ai_messages]}")
+                    logger.info(f"Temperature: {conversation.temperature / 100.0}, Max tokens: {conversation.max_tokens}")
                     
                     ai_response = await engine.generate(
                         messages=ai_messages,
                         temperature=conversation.temperature / 100.0,  # Convert 0-100 to 0.0-1.0
                         max_tokens=conversation.max_tokens
                     )
-                    logger.info(f"AI response received: {ai_response.content[:100]}...")
+                    logger.info(f"AI response received successfully")
+                    logger.info(f"AI response content: {ai_response.content[:100]}...")
+                    logger.info(f"AI response model: {ai_response.model}")
+                    logger.info(f"AI response tokens: {ai_response.tokens_used}")
 
                     # Create assistant message
                     assistant_message = Message(
@@ -200,7 +204,9 @@ async def create_message(
 
                 except Exception as generation_error:
                     logger.error(f"AI generation failed: {generation_error}", exc_info=True)
-                    ai_error = str(generation_error)
+                    logger.error(f"Generation error type: {type(generation_error).__name__}")
+                    logger.error(f"Generation error args: {generation_error.args}")
+                    ai_error = f"{type(generation_error).__name__}: {str(generation_error)}"
                     # Don't fail the user message if AI fails
 
         except Exception as e:
