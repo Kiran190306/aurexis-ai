@@ -68,10 +68,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         except Exception as e:
             logger.error(f"Error checking users table existence: {e}")
     
-    # AI Engine initialization is now lazy - defer to first use
-    # This prevents blocking startup on external AI provider connections
-    app.state.ai_engine_ready = False
-    logger.info("AI Engine will be initialized on first use")
+    # Initialize AI Engine
+    try:
+        await initialize_ai_engine()
+        from app.ai.engine import ai_engine
+        if ai_engine.list_providers():
+            app.state.ai_engine_ready = True
+            logger.info(f"AI Engine initialized with providers: {ai_engine.list_providers()}")
+        else:
+            app.state.ai_engine_ready = False
+            logger.warning("AI Engine initialized but no providers configured - AI features will be unavailable")
+    except Exception as e:
+        app.state.ai_engine_ready = False
+        logger.error(f"AI Engine initialization failed: {e}", exc_info=True)
+    
     logger.info("Aurexis AI Backend started successfully")
     yield
     # Shutdown

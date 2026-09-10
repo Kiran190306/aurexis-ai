@@ -80,16 +80,10 @@ export default function ConversationDetailPage() {
       // Add user message to list
       setMessages(prev => [...prev, createdMessage])
 
-      // Reload messages after a short delay to get the assistant response
+      // Reload messages to get the assistant response
       // The backend creates the assistant message synchronously
-      setTimeout(async () => {
-        try {
-          const updatedMessages = await MessageService.listConversationMessages(conversationId)
-          setMessages(updatedMessages)
-        } catch (err) {
-          console.error('Failed to reload messages:', err)
-        }
-      }, 1000)
+      const updatedMessages = await MessageService.listConversationMessages(conversationId)
+      setMessages(updatedMessages)
 
     } catch (err) {
       setError('Failed to send message')
