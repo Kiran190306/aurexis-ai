@@ -120,9 +120,13 @@ async def create_message(
     # Trigger AI execution if requested and message is from user
     assistant_message_id = None
     ai_error = None
+
+    logger.info(f"AI trigger check: trigger_ai={message_data.trigger_ai}, message.role={message.role}, MessageRole.user={MessageRole.user}")
+    logger.info(f"Role comparison result: {message.role == MessageRole.user}")
+
     
-    if message_data.trigger_ai and message_data.role == MessageRole.user.value:
-        logger.info(f"AI trigger requested for message {message.id}")
+    if message_data.trigger_ai and message_data.role == MessageRole.user:
+        logger.info(f"AI trigger condition passed - starting AI execution for message {message.id}")
         try:
             # Import AI engine and agent execution
             from app.ai.engine import ai_engine
@@ -315,3 +319,7 @@ async def delete_message(
     logger.info(f"Message deleted: {message_id}")
     
     return {"message": "Message deleted successfully"}
+
+
+
+
