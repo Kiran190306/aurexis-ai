@@ -216,17 +216,19 @@ async def create_message(
             ai_error = str(e)
             # Don't fail the user message if AI trigger fails
     
-    # Add AI status to message metadata
-    if message.metadata_json is None:
-        message.metadata_json = {}
-    message.metadata_json["ai_triggered"] = message_data.trigger_ai
-    message.metadata_json["ai_assistant_message_id"] = assistant_message_id
-    message.metadata_json["ai_error"] = ai_error
-    
-    await db.commit()
-    await db.refresh(message)
+        # Add AI status to message metadata
+        if message.metadata_json is None:
+            message.metadata_json = {}
+        message.metadata_json["ai_triggered"] = message_data.trigger_ai
+        message.metadata_json["ai_assistant_message_id"] = assistant_message_id
+        message.metadata_json["ai_error"] = ai_error
+        
+        await db.commit()
+        await db.refresh(message)
 
-    return message
+        logger.info(f"Message creation complete with AI status: ai_triggered={message_data.trigger_ai}, assistant_id={assistant_message_id}, error={ai_error}")
+
+        return message
 
 
 @router.get("/{message_id}", response_model=None)
