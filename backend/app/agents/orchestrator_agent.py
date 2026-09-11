@@ -231,21 +231,35 @@ Please synthesize these results into a comprehensive response addressing the ori
             )
         ]
         
-        response = await ai_engine.generate(
-            messages=messages,
-            temperature=0.5,
-            max_tokens=2000
-        )
-        
-        return {
-            "synthesized_response": response.content,
-            "task_results": results,
-            "metadata": {
-                "total_tasks": len(execution_plan.tasks),
-                "completed_tasks": len(self.completed_tasks),
-                "failed_tasks": len(self.failed_tasks)
+        try:
+            response = await ai_engine.generate(
+                messages=messages,
+                temperature=0.5,
+                max_tokens=2000
+            )
+            
+            return {
+                "synthesized_response": response.content,
+                "task_results": results,
+                "metadata": {
+                    "total_tasks": len(execution_plan.tasks),
+                    "completed_tasks": len(self.completed_tasks),
+                    "failed_tasks": len(self.failed_tasks)
+                }
             }
-        }
+        except Exception as e:
+            logger.error(f"Failed to synthesize results with AI: {e}", exc_info=True)
+            # Return unsynthesized results if AI synthesis fails
+            return {
+                "synthesized_response": "AI synthesis failed. Here are the raw task results:",
+                "task_results": results,
+                "metadata": {
+                    "total_tasks": len(execution_plan.tasks),
+                    "completed_tasks": len(self.completed_tasks),
+                    "failed_tasks": len(self.failed_tasks),
+                    "synthesis_error": str(e)
+                }
+            }
     
     def _format_results(self, results: Dict[str, Any]) -> str:
         """Format results for AI synthesis."""
