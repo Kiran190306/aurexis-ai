@@ -125,7 +125,7 @@ async def create_message(
     logger.info(f"Role comparison result: {message.role == MessageRole.user}")
 
     
-    if message_data.trigger_ai and message_data.role == MessageRole.user:
+    if message_data.trigger_ai and str(message.role) == str(MessageRole.user):
         logger.info(f"AI trigger condition passed - starting AI execution for message {message.id}")
         try:
             # Import AI engine and agent execution
@@ -319,6 +319,10 @@ async def delete_message(
     logger.info(f"Message deleted: {message_id}")
     
     return {"message": "Message deleted successfully"}
+
+
+
+
 
 
 
