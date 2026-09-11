@@ -161,7 +161,7 @@ async def create_message(
                 
                 # Add conversation history
                 for hist_msg in history_messages:
-                    role = "user" if hist_msg.role == MessageRole.user else "assistant"
+                    role = "user" if str(hist_msg.role) == str(MessageRole.user) else "assistant"
                     ai_messages.append(AIMessage(role=role, content=hist_msg.content))
                 logger.info(f"AI messages built: {len(ai_messages)} messages")
 
@@ -170,6 +170,7 @@ async def create_message(
                     logger.info("Starting AI generation...")
                     logger.info(f"AI messages for generation: {[(m.role, m.content[:50]) for m in ai_messages]}")
                     logger.info(f"Temperature: {conversation.temperature / 100.0}, Max tokens: {conversation.max_tokens}")
+                    logger.info(f"Provider being used: {engine.default_provider}")
                     
                     ai_response = await engine.generate(
                         messages=ai_messages,
@@ -177,6 +178,7 @@ async def create_message(
                         max_tokens=conversation.max_tokens
                     )
                     logger.info(f"AI response received successfully")
+                    logger.info(f"AI response type: {type(ai_response)}")
                     logger.info(f"AI response content: {ai_response.content[:100]}...")
                     logger.info(f"AI response model: {ai_response.model}")
                     logger.info(f"AI response tokens: {ai_response.tokens_used}")
