@@ -6,7 +6,7 @@ from typing import List, Optional, Any
 
 from app.core.database import get_db
 from app.core.security import get_current_user_id
-from app.models.conversation import Conversation, Message, MessageRole
+from app.models.conversation import Conversation, Message, MessageRole, MessageType
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -27,6 +27,17 @@ class MessageCreate(BaseModel):
     metadata: Optional[dict] = None
     parent_message_id: Optional[int] = None
     trigger_ai: bool = False  # Whether to trigger AI agent execution
+
+
+class MessageResponse(BaseModel):
+    id: int
+    conversation_id: int
+    user_id: int
+    role: str
+    content: str
+    message_type: str
+    created_at: Optional[str] = None
+    metadata_json: Optional[dict] = None
 
 
 class MessageUpdate(BaseModel):
@@ -68,12 +79,12 @@ async def list_messages(
     return messages
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=MessageResponse)
 async def create_message(
     message_data: MessageCreate,
     current_user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
-) -> Message:
+) -> MessageResponse:
     """Create a new message. Optionally trigger AI agent execution."""
     # Verify conversation belongs to user
     result = await db.execute(
@@ -92,9 +103,9 @@ async def create_message(
     message = Message(
         conversation_id=message_data.conversation_id,
         user_id=current_user_id,
-        role=message_data.role,  # Store the string value directly - SQLAlchemy will handle enum conversion
+        role=MessageRole[message_data.role.upper()],  # Convert string to enum
         content=message_data.content,
-        message_type=message_data.message_type,  # Store the string value directly
+        message_type=MessageType[message_data.message_type.upper()],  # Convert string to enum
         code_language=message_data.code_language,
         code_content=message_data.code_content,
         image_url=message_data.image_url,
@@ -193,7 +204,7 @@ async def create_message(
                         user_id=current_user_id,
                         role=MessageRole.assistant,
                         content=ai_response.content,
-                        message_type="text",
+                        message_type=MessageType.text,
                         metadata_json={"triggered_by_message_id": message.id}
                     )
                     logger.info(f"Assistant message object created")
@@ -232,7 +243,16 @@ async def create_message(
 
         logger.info(f"Message creation complete with AI status: ai_triggered={message_data.trigger_ai}, assistant_id={assistant_message_id}, error={ai_error}")
 
-        return message
+        return MessageResponse(
+            id=message.id,
+            conversation_id=message.conversation_id,
+            user_id=message.user_id,
+            role=str(message.role),
+            content=message.content,
+            message_type=str(message.message_type),
+            created_at=message.created_at.isoformat() if message.created_at else None,
+            metadata_json=message.metadata_json
+        )
 
 
 @router.get("/{message_id}", response_model=None)
