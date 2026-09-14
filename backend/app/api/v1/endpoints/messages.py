@@ -103,9 +103,9 @@ async def create_message(
     message = Message(
         conversation_id=message_data.conversation_id,
         user_id=current_user_id,
-        role=MessageRole[message_data.role.upper()],  # Convert string to enum
+        role=MessageRole(message_data.role) if message_data.role in MessageRole.__members__ else MessageRole.user,
         content=message_data.content,
-        message_type=MessageType[message_data.message_type.upper()],  # Convert string to enum
+        message_type=MessageType(message_data.message_type) if message_data.message_type in MessageType.__members__ else MessageType.text,
         code_language=message_data.code_language,
         code_content=message_data.code_content,
         image_url=message_data.image_url,
@@ -115,6 +115,7 @@ async def create_message(
         tool_response=message_data.tool_response,
         metadata=message_data.metadata,
         parent_message_id=message_data.parent_message_id,
+        metadata_json=None  # Initialize to None to avoid JSON issues
     )
 
     db.add(message)
@@ -134,8 +135,8 @@ async def create_message(
 
     logger.info(f"AI trigger check: trigger_ai={message_data.trigger_ai}, message.role={message.role}, MessageRole.user={MessageRole.user}")
     logger.info(f"Role comparison result: {message.role == MessageRole.user}")
+    logger.info(f"Role string comparison: {str(message.role) == str(MessageRole.user)}")
 
-    
     if message_data.trigger_ai and str(message.role) == str(MessageRole.user):
         logger.info(f"AI trigger condition passed - starting AI execution for message {message.id}")
         try:
@@ -184,7 +185,9 @@ async def create_message(
                 try:
                     logger.info("Starting AI generation...")
                     logger.info(f"AI messages for generation: {[(m.role, m.content[:50]) for m in ai_messages]}")
-                    logger.info(f"Temperature: {conversation.temperature / 100.0}, Max tokens: {conversation.max_tokens}")
+                    logger.info(f"Conversation temperature (database): {conversation.temperature}")
+                    logger.info(f"Temperature for OpenAI: {conversation.temperature / 100.0}")
+                    logger.info(f"Max tokens: {conversation.max_tokens}")
                     logger.info(f"Provider being used: {engine.default_provider}")
                     
                     ai_response = await engine.generate(
@@ -205,7 +208,7 @@ async def create_message(
                         role=MessageRole.assistant,
                         content=ai_response.content,
                         message_type=MessageType.text,
-                        metadata_json={"triggered_by_message_id": message.id}
+                        metadata_json={"triggered_by_message_id": str(message.id)}
                     )
                     logger.info(f"Assistant message object created")
 
