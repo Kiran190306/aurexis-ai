@@ -13,7 +13,9 @@ class OpenAIProvider(BaseLLMProvider):
         self.client = AsyncOpenAI(api_key=api_key)
         try:
             self.encoding = tiktoken.encoding_for_model(model)
+            logger.info(f"Using tiktoken encoding for model: {model}")
         except KeyError:
+            logger.warning(f"Model {model} not found in tiktoken, using cl100k_base encoding")
             self.encoding = tiktoken.get_encoding("cl100k_base")
     
     async def generate(
@@ -25,9 +27,10 @@ class OpenAIProvider(BaseLLMProvider):
     ) -> LLMResponse:
         """Generate a response from OpenAI"""
         openai_messages = [{"role": m.role, "content": m.content} for m in messages]  # type: ignore[list-item]
-        
+
         logger.info(f"OpenAI API call: model={self.model}, messages={len(openai_messages)}, temperature={temperature}")
-        
+        logger.info(f"OpenAI messages: {openai_messages}")
+
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
@@ -36,11 +39,19 @@ class OpenAIProvider(BaseLLMProvider):
                 max_tokens=max_tokens,
                 **kwargs
             )
-            
+
             logger.info(f"OpenAI API response: model={response.model}, choices={len(response.choices)}, finish_reason={response.choices[0].finish_reason if response.choices else 'none'}")
-            
+            logger.info(f"OpenAI response object: {response}")
+            logger.info(f"OpenAI response choices: {response.choices}")
+
+            if not response.choices:
+                raise ValueError("OpenAI API returned no choices")
+
+            message_content = response.choices[0].message.content or ""  # type: ignore[assignment]
+            logger.info(f"Extracted message content: {message_content[:100]}...")
+
             return LLMResponse(
-                content=response.choices[0].message.content or "",  # type: ignore[assignment]
+                content=message_content,
                 model=response.model,
                 tokens_used=response.usage.total_tokens if response.usage else None,
                 finish_reason=response.choices[0].finish_reason
