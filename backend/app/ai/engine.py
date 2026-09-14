@@ -60,22 +60,22 @@ class AIEngine:
     ) -> Any:
         """Generate a response using the specified or default provider"""
         llm = self.get_provider(provider)
-        logger.info(f"Generating response using provider '{provider or self.default_provider}'")
-        logger.info(f"Provider default model: {llm.model}")
-        logger.info(f"Requested model override: {model}")
+        logger.info("AI_ENGINE_GENERATE_START provider='{}' model='{}'", provider or self.default_provider, model or llm.model)
+        logger.info("Provider default model: {}", llm.model)
+        logger.info("Requested model override: {}", model)
         # Override model if provided
         if model:
             llm.model = model
-            logger.info(f"Model overridden to: {llm.model}")
-        logger.info(f"Final model being used: {llm.model}")
-        logger.info(f"Temperature: {temperature}, Max tokens: {max_tokens}")
-        logger.info(f"Number of messages: {len(messages)}")
+            logger.info("Model overridden to: {}", llm.model)
+        logger.info("Final model being used: {}", llm.model)
+        logger.info("Temperature: {}, Max tokens: {}", temperature, max_tokens)
+        logger.info("Number of messages: {}", len(messages))
         try:
-            return await llm.generate(messages, temperature, max_tokens, **kwargs)
+            result = await llm.generate(messages, temperature, max_tokens, **kwargs)
+            logger.info("AI_ENGINE_GENERATE_SUCCESS result_type={}", type(result))
+            return result
         except Exception as e:
-            logger.error(f"AI engine generation error: {type(e).__name__}: {str(e)}", exc_info=True)
-            logger.error(f"Error repr: {repr(e)}")
-            logger.error(f"Error args: {e.args}")
+            logger.opt(exception=True).error("AI_ENGINE_GENERATE_ERROR")
             raise
     
     async def generate_stream(

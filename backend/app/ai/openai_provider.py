@@ -28,10 +28,11 @@ class OpenAIProvider(BaseLLMProvider):
         """Generate a response from OpenAI"""
         openai_messages = [{"role": m.role, "content": m.content} for m in messages]  # type: ignore[list-item]
 
-        logger.info(f"OpenAI API call: model={self.model}, messages={len(openai_messages)}, temperature={temperature}")
-        logger.info(f"OpenAI messages: {openai_messages}")
+        logger.info("OPENAI_PROVIDER_START model={} messages={} temperature={}", self.model, len(openai_messages), temperature)
+        logger.info("OpenAI messages: {}", openai_messages)
 
         try:
+            logger.info("OPENAI_API_CALL_START")
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=openai_messages,  # type: ignore[arg-type]
@@ -39,16 +40,17 @@ class OpenAIProvider(BaseLLMProvider):
                 max_tokens=max_tokens,
                 **kwargs
             )
+            logger.info("OPENAI_API_CALL_SUCCESS")
 
-            logger.info(f"OpenAI API response: model={response.model}, choices={len(response.choices)}, finish_reason={response.choices[0].finish_reason if response.choices else 'none'}")
-            logger.info(f"OpenAI response object: {response}")
-            logger.info(f"OpenAI response choices: {response.choices}")
+            logger.info("OpenAI API response: model={}, choices={}, finish_reason={}", response.model, len(response.choices), response.choices[0].finish_reason if response.choices else 'none')
+            logger.info("OpenAI response object: {}", response)
+            logger.info("OpenAI response choices: {}", response.choices)
 
             if not response.choices:
                 raise ValueError("OpenAI API returned no choices")
 
             message_content = response.choices[0].message.content or ""  # type: ignore[assignment]
-            logger.info(f"Extracted message content: {message_content[:100]}...")
+            logger.info("Extracted message content: {}...", message_content[:100] if len(message_content) > 100 else message_content)
 
             return LLMResponse(
                 content=message_content,
@@ -57,7 +59,7 @@ class OpenAIProvider(BaseLLMProvider):
                 finish_reason=response.choices[0].finish_reason
             )
         except RateLimitError as e:
-            logger.error(f"OpenAI RateLimitError: {str(e)}")
+            logger.opt(exception=True).error("OPENAI_RATE_LIMIT_ERROR")
             error_details = {
                 "error_type": "rate_limit",
                 "http_status_code": getattr(e, 'status_code', 429),
@@ -65,10 +67,10 @@ class OpenAIProvider(BaseLLMProvider):
                 "openai_error_type": getattr(e, 'type', 'rate_limit'),
                 "message": str(e)
             }
-            logger.error(f"OpenAI rate limit error details: {error_details}")
+            logger.error("OpenAI rate limit error details: {}", error_details)
             raise
         except AuthenticationError as e:
-            logger.error(f"OpenAI AuthenticationError: {str(e)}")
+            logger.opt(exception=True).error("OPENAI_AUTH_ERROR")
             error_details = {
                 "error_type": "authentication",
                 "http_status_code": getattr(e, 'status_code', 401),
@@ -76,18 +78,18 @@ class OpenAIProvider(BaseLLMProvider):
                 "openai_error_type": getattr(e, 'type', 'authentication'),
                 "message": str(e)
             }
-            logger.error(f"OpenAI authentication error details: {error_details}")
+            logger.error("OpenAI authentication error details: {}", error_details)
             raise
         except APIConnectionError as e:
-            logger.error(f"OpenAI APIConnectionError: {str(e)}")
+            logger.opt(exception=True).error("OPENAI_CONNECTION_ERROR")
             error_details = {
                 "error_type": "network",
                 "message": str(e)
             }
-            logger.error(f"OpenAI network error details: {error_details}")
+            logger.error("OpenAI network error details: {}", error_details)
             raise
         except APIError as e:
-            logger.error(f"OpenAI APIError: {str(e)}")
+            logger.opt(exception=True).error("OPENAI_API_ERROR")
             error_details = {
                 "error_type": "api_error",
                 "http_status_code": getattr(e, 'status_code', 500),
@@ -95,16 +97,16 @@ class OpenAIProvider(BaseLLMProvider):
                 "openai_error_type": getattr(e, 'type', 'api_error'),
                 "message": str(e)
             }
-            logger.error(f"OpenAI API error details: {error_details}")
+            logger.error("OpenAI API error details: {}", error_details)
             raise
         except Exception as e:
-            logger.error(f"OpenAI unexpected error: type={type(e).__name__}, message={str(e)}")
+            logger.opt(exception=True).error("OPENAI_UNEXPECTED_ERROR")
             error_details = {
                 "error_type": "unexpected",
                 "exception_type": type(e).__name__,
                 "message": str(e)
             }
-            logger.error(f"OpenAI unexpected error details: {error_details}")
+            logger.error("OpenAI unexpected error details: {}", error_details)
             raise
     
     async def generate_stream(
