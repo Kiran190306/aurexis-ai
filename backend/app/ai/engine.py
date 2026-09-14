@@ -55,11 +55,15 @@ class AIEngine:
         provider: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
+        model: Optional[str] = None,
         **kwargs: Any
     ) -> Any:
         """Generate a response using the specified or default provider"""
         llm = self.get_provider(provider)
-        logger.info(f"Generating response using provider '{provider or self.default_provider}'")
+        logger.info(f"Generating response using provider '{provider or self.default_provider}', model '{model or llm.model}'")
+        # Override model if provided
+        if model:
+            llm.model = model
         return await llm.generate(messages, temperature, max_tokens, **kwargs)
     
     async def generate_stream(

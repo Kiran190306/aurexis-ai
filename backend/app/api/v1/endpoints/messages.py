@@ -100,12 +100,23 @@ async def create_message(
             detail="Conversation not found",
         )
 
+    # Convert string role/message_type to enum objects (incoming values are lowercase)
+    try:
+        role_enum = MessageRole[message_data.role.upper()] if message_data.role else MessageRole.user
+    except (KeyError, AttributeError):
+        role_enum = MessageRole.user
+
+    try:
+        message_type_enum = MessageType[message_data.message_type.upper()] if message_data.message_type else MessageType.text
+    except (KeyError, AttributeError):
+        message_type_enum = MessageType.text
+
     message = Message(
         conversation_id=message_data.conversation_id,
         user_id=current_user_id,
-        role=MessageRole(message_data.role) if message_data.role in MessageRole.__members__ else MessageRole.user,
+        role=role_enum,
         content=message_data.content,
-        message_type=MessageType(message_data.message_type) if message_data.message_type in MessageType.__members__ else MessageType.text,
+        message_type=message_type_enum,
         code_language=message_data.code_language,
         code_content=message_data.code_content,
         image_url=message_data.image_url,
@@ -188,12 +199,14 @@ async def create_message(
                     logger.info(f"Conversation temperature (database): {conversation.temperature}")
                     logger.info(f"Temperature for OpenAI: {conversation.temperature / 100.0}")
                     logger.info(f"Max tokens: {conversation.max_tokens}")
+                    logger.info(f"Conversation model: {conversation.model}")
                     logger.info(f"Provider being used: {engine.default_provider}")
-                    
+
                     ai_response = await engine.generate(
                         messages=ai_messages,
                         temperature=conversation.temperature / 100.0,  # Convert 0-100 to 0.0-1.0
-                        max_tokens=conversation.max_tokens
+                        max_tokens=conversation.max_tokens,
+                        model=conversation.model  # Pass conversation's model to the AI engine
                     )
                     logger.info(f"AI response received successfully")
                     logger.info(f"AI response type: {type(ai_response)}")
