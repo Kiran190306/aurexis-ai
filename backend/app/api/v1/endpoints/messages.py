@@ -188,7 +188,9 @@ async def create_message(
                 
                 # Add conversation history
                 for hist_msg in history_messages:
-                    role = "user" if str(hist_msg.role) == str(MessageRole.user) else "assistant"
+                    # Convert enum to string value for AI message
+                    role_value = hist_msg.role.value if hasattr(hist_msg.role, 'value') else str(hist_msg.role)
+                    role = "user" if role_value == "user" else "assistant"
                     ai_messages.append(AIMessage(role=role, content=hist_msg.content))
                 logger.info(f"AI messages built: {len(ai_messages)} messages")
 
@@ -210,7 +212,7 @@ async def create_message(
                     )
                     logger.info(f"AI response received successfully")
                     logger.info(f"AI response type: {type(ai_response)}")
-                    logger.info(f"AI response content: {ai_response.content[:100]}...")
+                    logger.info(f"AI response content: {ai_response.content[:100] if len(ai_response.content) > 100 else ai_response.content}...")
                     logger.info(f"AI response model: {ai_response.model}")
                     logger.info(f"AI response tokens: {ai_response.tokens_used}")
 
