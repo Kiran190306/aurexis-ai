@@ -4,11 +4,11 @@ from sqlalchemy import select
 from loguru import logger
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.core.security import get_current_user_id
 from app.models.conversation import Conversation, ConversationStatus
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -17,8 +17,8 @@ class ConversationCreate(BaseModel):
     title: str
     description: Optional[str] = None
     model: str = "gpt-4-turbo-preview"
-    temperature: int = 70
-    max_tokens: int = 4096
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="LLM temperature (0.0 to 2.0)")
+    max_tokens: int = Field(default=4096, ge=1, le=32768, description="Maximum tokens to generate")
     system_prompt: Optional[str] = None
     tags: List[str] = []
 
@@ -28,8 +28,8 @@ class ConversationUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     model: Optional[str] = None
-    temperature: Optional[int] = None
-    max_tokens: Optional[int] = None
+    temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0, description="LLM temperature (0.0 to 2.0)")
+    max_tokens: Optional[int] = Field(default=None, ge=1, le=32768, description="Maximum tokens to generate")
     system_prompt: Optional[str] = None
     tags: Optional[List[str]] = None
 
@@ -66,7 +66,7 @@ async def create_conversation(
             title=conversation_data.title,
             description=conversation_data.description,
             model=conversation_data.model,
-            temperature=conversation_data.temperature,
+            temperature=int(conversation_data.temperature * 100),  # Convert 0.0-2.0 to 0-100
             max_tokens=conversation_data.max_tokens,
             system_prompt=conversation_data.system_prompt,
             tags=conversation_data.tags,
@@ -139,7 +139,11 @@ async def update_conversation(
     # Update fields
     update_data = conversation_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(conversation, field, value)
+        if field == "temperature" and value is not None:
+            # Convert 0.0-2.0 to 0-100 for database storage
+            setattr(conversation, field, int(value * 100))
+        else:
+            setattr(conversation, field, value)
     
     conversation.updated_at = datetime.utcnow()  # type: ignore[assignment]
     

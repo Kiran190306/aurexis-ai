@@ -46,6 +46,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup
     logger.info("Starting Aurexis AI Backend...")
     
+    # Log JWT configuration
+    logger.info(f"JWT Configuration: algorithm={settings.ALGORITHM}, access_token_expire={settings.ACCESS_TOKEN_EXPIRE_MINUTES}min")
+    logger.info(f"JWT Secret configured: {bool(settings.SECRET_KEY)}")
+    logger.info(f"Environment: {settings.APP_ENV}")
+    
     # Only call init_db() in development/testing mode
     # Production schema must be managed via Alembic migrations
     if settings.APP_ENV in ["development", "testing"]:
