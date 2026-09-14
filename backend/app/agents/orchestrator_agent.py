@@ -237,9 +237,17 @@ Please synthesize these results into a comprehensive response addressing the ori
                 temperature=0.5,
                 max_tokens=2000
             )
-            
+
+            # Safely access response content - handle both dict and object
+            if hasattr(response, 'content'):
+                response_content = response.content
+            elif isinstance(response, dict):
+                response_content = response.get('content', '')
+            else:
+                response_content = str(response)
+
             return {
-                "synthesized_response": response.content,
+                "synthesized_response": response_content,
                 "task_results": results,
                 "metadata": {
                     "total_tasks": len(execution_plan.tasks),

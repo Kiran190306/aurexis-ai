@@ -319,7 +319,15 @@ class MemoryAgent(BaseAgent):
         
         import json
         try:
-            return json.loads(response.content)  # type: ignore[no-any-return]
+            # Safely access response content
+            if hasattr(response, 'content'):
+                response_content = response.content
+            elif isinstance(response, dict):
+                response_content = response.get('content', '')
+            else:
+                response_content = str(response)
+
+            return json.loads(response_content)  # type: ignore[no-any-return]
         except (json.JSONDecodeError, ValueError):
             return query.split()
     
@@ -362,7 +370,15 @@ Return ranked results as JSON array."""
         
         import json
         try:
-            return json.loads(response.content)  # type: ignore[no-any-return]
+            # Safely access response content
+            if hasattr(response, 'content'):
+                response_content = response.content
+            elif isinstance(response, dict):
+                response_content = response.get('content', '')
+            else:
+                response_content = str(response)
+
+            return json.loads(response_content)  # type: ignore[no-any-return]
         except (json.JSONDecodeError, ValueError):
             return results
     

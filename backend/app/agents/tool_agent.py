@@ -171,9 +171,17 @@ Output as JSON with tool names and reasoning."""
         
         import json
         try:
-            selection = json.loads(response.content)
+            # Safely access response content
+            if hasattr(response, 'content'):
+                response_content = response.content
+            elif isinstance(response, dict):
+                response_content = response.get('content', '')
+            else:
+                response_content = str(response)
+
+            selection = json.loads(response_content)
         except (json.JSONDecodeError, ValueError):
-            selection = {"tool": available_tools[0] if available_tools else None, "reasoning": response.content}
+            selection = {"tool": available_tools[0] if available_tools else None, "reasoning": response_content if 'response_content' in locals() else str(response)}
         
         return AgentResponse(
             success=True,

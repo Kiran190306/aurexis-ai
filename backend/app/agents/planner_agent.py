@@ -136,7 +136,19 @@ Please analyze this request and create a detailed execution plan. Output valid J
         )
         
         import json
-        plan_data = json.loads(response.content)
+        try:
+            # Safely access response content
+            if hasattr(response, 'content'):
+                response_content = response.content
+            elif isinstance(response, dict):
+                response_content = response.get('content', '')
+            else:
+                response_content = str(response)
+
+            plan_data = json.loads(response_content)
+        except (json.JSONDecodeError, ValueError):
+            # Fallback to empty plan if JSON parsing fails
+            plan_data = {"tasks": [], "estimated_duration": 300, "metadata": {}}
         
         # Convert to ExecutionPlan
         tasks = []
