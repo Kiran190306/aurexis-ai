@@ -102,12 +102,12 @@ async def create_message(
 
     # Convert string role/message_type to enum objects (incoming values are lowercase)
     try:
-        role_enum = MessageRole[message_data.role.upper()] if message_data.role else MessageRole.user
+        role_enum = MessageRole[message_data.role] if message_data.role else MessageRole.user
     except (KeyError, AttributeError):
         role_enum = MessageRole.user
 
     try:
-        message_type_enum = MessageType[message_data.message_type.upper()] if message_data.message_type else MessageType.text
+        message_type_enum = MessageType[message_data.message_type] if message_data.message_type else MessageType.text
     except (KeyError, AttributeError):
         message_type_enum = MessageType.text
 
@@ -240,6 +240,7 @@ async def create_message(
                     logger.error(f"Generation error type: {type(generation_error).__name__}")
                     logger.error(f"Generation error args: {generation_error.args}")
                     logger.error(f"Generation error repr: {repr(generation_error)}")
+                    logger.error(f"Generation error str: {str(generation_error)}")
                     # Sanitize error for external response
                     error_str = str(generation_error)
                     # Remove any potential sensitive information
