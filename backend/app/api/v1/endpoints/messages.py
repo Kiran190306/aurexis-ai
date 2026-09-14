@@ -254,7 +254,18 @@ async def create_message(
 
         except Exception as e:
             logger.error(f"Failed to trigger AI execution: {e}", exc_info=True)
-            ai_error = str(e)
+            logger.error(f"Outer exception type: {type(e).__name__}")
+            logger.error(f"Outer exception repr: {repr(e)}")
+            logger.error(f"Outer exception args: {e.args}")
+            # Log the full traceback
+            import traceback
+            logger.error(f"Full traceback:\n{traceback.format_exc()}")
+            # Sanitize the error message for external response
+            error_str = str(e)
+            if "api_key" in error_str.lower() or "secret" in error_str.lower():
+                ai_error = "AI generation failed (provider error)"
+            else:
+                ai_error = f"{type(e).__name__}: {error_str}"
             # Don't fail the user message if AI trigger fails
     
         # Add AI status to message metadata
