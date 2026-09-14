@@ -239,7 +239,14 @@ async def create_message(
                     logger.error(f"AI generation failed: {generation_error}", exc_info=True)
                     logger.error(f"Generation error type: {type(generation_error).__name__}")
                     logger.error(f"Generation error args: {generation_error.args}")
-                    ai_error = f"{type(generation_error).__name__}: {str(generation_error)}"
+                    logger.error(f"Generation error repr: {repr(generation_error)}")
+                    # Sanitize error for external response
+                    error_str = str(generation_error)
+                    # Remove any potential sensitive information
+                    if "api_key" in error_str.lower() or "secret" in error_str.lower():
+                        ai_error = "AI generation failed (provider error)"
+                    else:
+                        ai_error = f"{type(generation_error).__name__}: {error_str}"
                     # Don't fail the user message if AI fails
 
         except Exception as e:
@@ -263,9 +270,9 @@ async def create_message(
             id=message.id,
             conversation_id=message.conversation_id,
             user_id=message.user_id,
-            role=str(message.role),
+            role=message.role.value if hasattr(message.role, 'value') else str(message.role),
             content=message.content,
-            message_type=str(message.message_type),
+            message_type=message.message_type.value if hasattr(message.message_type, 'value') else str(message.message_type),
             created_at=message.created_at.isoformat() if message.created_at else None,
             metadata_json=message.metadata_json
         )

@@ -60,11 +60,23 @@ class AIEngine:
     ) -> Any:
         """Generate a response using the specified or default provider"""
         llm = self.get_provider(provider)
-        logger.info(f"Generating response using provider '{provider or self.default_provider}', model '{model or llm.model}'")
+        logger.info(f"Generating response using provider '{provider or self.default_provider}'")
+        logger.info(f"Provider default model: {llm.model}")
+        logger.info(f"Requested model override: {model}")
         # Override model if provided
         if model:
             llm.model = model
-        return await llm.generate(messages, temperature, max_tokens, **kwargs)
+            logger.info(f"Model overridden to: {llm.model}")
+        logger.info(f"Final model being used: {llm.model}")
+        logger.info(f"Temperature: {temperature}, Max tokens: {max_tokens}")
+        logger.info(f"Number of messages: {len(messages)}")
+        try:
+            return await llm.generate(messages, temperature, max_tokens, **kwargs)
+        except Exception as e:
+            logger.error(f"AI engine generation error: {type(e).__name__}: {str(e)}", exc_info=True)
+            logger.error(f"Error repr: {repr(e)}")
+            logger.error(f"Error args: {e.args}")
+            raise
     
     async def generate_stream(
         self,
