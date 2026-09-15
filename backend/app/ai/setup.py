@@ -13,7 +13,7 @@ async def initialize_ai_engine() -> None:
             name="openai",
             provider_type="openai",
             api_key=settings.OPENAI_API_KEY,
-            model=settings.OPENAI_MODEL or "gpt-4-turbo",
+            model=settings.OPENAI_MODEL or "gpt-4o-mini",
         )
         logger.info("OpenAI provider initialized")
     

@@ -44,7 +44,7 @@ class Conversation(Base):
     status: Mapped[ConversationStatus] = mapped_column(Enum(ConversationStatus), default=ConversationStatus.active)
     
     # AI Configuration
-    model = Column(String(50), default="gpt-4-turbo-preview")
+    model = Column(String(50), default="gpt-4o-mini")
     temperature = Column(Integer, default=70)  # 0-100
     max_tokens = Column(Integer, default=4096)
     system_prompt = Column(Text, nullable=True)

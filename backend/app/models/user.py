@@ -86,7 +86,7 @@ class UserSettings(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     
     # AI Preferences
-    default_model = Column(String(50), default="gpt-4-turbo-preview")
+    default_model = Column(String(50), default="gpt-4o-mini")
     default_temperature = Column(Integer, default=70)  # 0-100
     default_max_tokens = Column(Integer, default=4096)
     enable_streaming = Column(Boolean, default=True)

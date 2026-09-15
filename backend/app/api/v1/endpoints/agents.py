@@ -8,6 +8,7 @@ from datetime import datetime
 from app.core.database import get_db
 from app.core.security import get_current_user_id
 from app.models.agent import Agent, AgentStatus
+from app.core.config import settings
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -20,7 +21,7 @@ class AgentCreate(BaseModel):
     capabilities: Optional[List[str]] = None
     specializations: Optional[List[str]] = None
     system_prompt: str
-    model: str = "gpt-4-turbo-preview"
+    model: Optional[str] = None
     temperature: int = 70
     max_tokens: int = 4096
     tool_ids: Optional[List[int]] = None
@@ -83,7 +84,7 @@ async def create_agent(
         capabilities=agent_data.capabilities,
         specializations=agent_data.specializations,
         system_prompt=agent_data.system_prompt,
-        model=agent_data.model,
+        model=agent_data.model or settings.OPENAI_MODEL,
         temperature=agent_data.temperature,
         max_tokens=agent_data.max_tokens,
         tool_ids=agent_data.tool_ids,

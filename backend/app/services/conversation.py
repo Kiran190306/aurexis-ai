@@ -5,6 +5,7 @@ from loguru import logger
 from app.repositories.conversation import ConversationRepository, MessageRepository
 from app.models.conversation import Conversation, Message, ConversationStatus
 from app.core.security import get_password_hash
+from app.core.config import settings
 from pydantic import BaseModel
 
 
@@ -21,7 +22,7 @@ class ConversationService:
         user_id: int,
         title: str,
         description: Optional[str] = None,
-        model: str = "gpt-4-turbo-preview",
+        model: Optional[str] = None,
         temperature: int = 70,
         max_tokens: int = 4096,
         system_prompt: Optional[str] = None,
@@ -32,7 +33,7 @@ class ConversationService:
             "user_id": user_id,
             "title": title,
             "description": description,
-            "model": model,
+            "model": model or settings.OPENAI_MODEL,
             "temperature": temperature,
             "max_tokens": max_tokens,
             "system_prompt": system_prompt,

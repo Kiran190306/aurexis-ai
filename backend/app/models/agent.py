@@ -43,7 +43,7 @@ class Agent(Base):
     
     # Configuration
     system_prompt = Column(Text, nullable=False)
-    model = Column(String(50), default="gpt-4-turbo-preview")
+    model = Column(String(50), default="gpt-4o-mini")
     temperature = Column(Integer, default=70)
     max_tokens = Column(Integer, default=4096)
     

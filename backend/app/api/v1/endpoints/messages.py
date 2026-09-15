@@ -243,23 +243,28 @@ async def create_message(
 
                 except Exception as generation_error:
                     logger.opt(exception=True).error("AI_STAGE=OPENAI_ERROR AI generation failed")
-                    # Sanitize error for external response
+                    # Sanitize error for external response - create normalized error structure
+                    error_type = type(generation_error).__name__
                     error_str = str(generation_error)
+
                     # Remove any potential sensitive information
                     if "api_key" in error_str.lower() or "secret" in error_str.lower():
                         ai_error = "AI generation failed (provider error)"
                     else:
-                        ai_error = f"{type(generation_error).__name__}: {error_str}"
+                        # Create normalized error structure
+                        ai_error = f"{error_type}: {error_str}"
                     # Don't fail the user message if AI fails
 
         except Exception as e:
             logger.opt(exception=True).error("AI_STAGE=OUTER_ERROR Failed to trigger AI execution")
-            # Sanitize the error message for external response
+            # Sanitize the error message for external response - create normalized error structure
+            error_type = type(e).__name__
             error_str = str(e)
             if "api_key" in error_str.lower() or "secret" in error_str.lower():
                 ai_error = "AI generation failed (provider error)"
             else:
-                ai_error = f"{type(e).__name__}: {error_str}"
+                # Create normalized error structure
+                ai_error = f"{error_type}: {error_str}"
             # Don't fail the user message if AI trigger fails
     
         # Add AI status to message metadata

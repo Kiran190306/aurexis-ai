@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from app.core.database import get_db
 from app.core.security import get_current_user_id
 from app.models.conversation import Conversation, ConversationStatus
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -16,7 +17,7 @@ router = APIRouter()
 class ConversationCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    model: str = "gpt-4-turbo-preview"
+    model: Optional[str] = None
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="LLM temperature (0.0 to 2.0)")
     max_tokens: int = Field(default=4096, ge=1, le=32768, description="Maximum tokens to generate")
     system_prompt: Optional[str] = None
@@ -65,7 +66,7 @@ async def create_conversation(
             user_id=current_user_id,
             title=conversation_data.title,
             description=conversation_data.description,
-            model=conversation_data.model,
+            model=conversation_data.model or settings.OPENAI_MODEL,
             temperature=int(conversation_data.temperature * 100),  # Convert 0.0-2.0 to 0-100
             max_tokens=conversation_data.max_tokens,
             system_prompt=conversation_data.system_prompt,

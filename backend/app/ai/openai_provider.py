@@ -1,5 +1,5 @@
 from typing import List, Optional, AsyncIterator, Any
-from openai import AsyncOpenAI, RateLimitError, AuthenticationError, APIError, APIConnectionError
+from openai import AsyncOpenAI, RateLimitError, AuthenticationError, APIError, APIConnectionError, NotFoundError, BadRequestError
 from .base import BaseLLMProvider, Message, LLMResponse
 import tiktoken
 from loguru import logger
@@ -8,7 +8,7 @@ from loguru import logger
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI GPT provider"""
     
-    def __init__(self, api_key: str, model: str = "gpt-4-turbo", **kwargs: Any) -> None:
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini", **kwargs: Any) -> None:
         super().__init__(api_key, model, **kwargs)
         self.client = AsyncOpenAI(api_key=api_key)
         try:
@@ -79,6 +79,28 @@ class OpenAIProvider(BaseLLMProvider):
                 "message": str(e)
             }
             logger.error("OpenAI authentication error details: {}", error_details)
+            raise
+        except NotFoundError as e:
+            logger.opt(exception=True).error("OPENAI_NOT_FOUND_ERROR")
+            error_details = {
+                "error_type": "not_found",
+                "http_status_code": getattr(e, 'status_code', 404),
+                "openai_error_code": getattr(e, 'code', 'not_found'),
+                "openai_error_type": getattr(e, 'type', 'not_found'),
+                "message": str(e)
+            }
+            logger.error("OpenAI not found error details: {}", error_details)
+            raise
+        except BadRequestError as e:
+            logger.opt(exception=True).error("OPENAI_BAD_REQUEST_ERROR")
+            error_details = {
+                "error_type": "bad_request",
+                "http_status_code": getattr(e, 'status_code', 400),
+                "openai_error_code": getattr(e, 'code', 'invalid_request'),
+                "openai_error_type": getattr(e, 'type', 'invalid_request'),
+                "message": str(e)
+            }
+            logger.error("OpenAI bad request error details: {}", error_details)
             raise
         except APIConnectionError as e:
             logger.opt(exception=True).error("OPENAI_CONNECTION_ERROR")
