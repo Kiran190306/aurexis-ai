@@ -137,7 +137,7 @@ Variables related to monitoring and observability.
 |------|-----------|---------|----------|---------|----------------|-----------------|-------|
 | OPENAI_API_KEY | OPTIONAL | YES | LLM | Backend | All Services | NO | OpenAI API key |
 | OPENAI_ORGANIZATION | NO | YES | LLM | Backend | All Services | NO | OpenAI organization ID |
-| OPENAI_MODEL | NO | NO | LLM | Backend | All Services | YES | "gpt-4-turbo-preview" |
+| OPENAI_MODEL | NO | NO | LLM | Backend | All Services | YES | "gpt-4o-mini" |
 | OPENAI_TEMPERATURE | NO | NO | LLM | Backend | All Services | YES | 0.7 |
 | OPENAI_MAX_TOKENS | NO | NO | LLM | Backend | All Services | YES | 4096 |
 | OPENAI_TIMEOUT | NO | NO | LLM | Backend | All Services | YES | 60 |

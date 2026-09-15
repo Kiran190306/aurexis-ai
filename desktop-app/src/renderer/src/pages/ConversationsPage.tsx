@@ -30,7 +30,7 @@ export default function ConversationsPage() {
       const result = await createConversation.mutateAsync({
         title: 'New Conversation',
         description: '',
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o-mini',
       })
       // Navigate to the new conversation
       window.location.href = `/conversations/${result.id}`

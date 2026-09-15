@@ -23,14 +23,14 @@ LLM provider configuration documented. Application supports multiple LLM provide
 ```python
 OPENAI_API_KEY: Optional[str] = None
 OPENAI_ORGANIZATION: Optional[str] = None
-OPENAI_MODEL: str = "gpt-4-turbo-preview"
+OPENAI_MODEL: str = "gpt-4o-mini"
 OPENAI_TEMPERATURE: float = 0.7
 OPENAI_MAX_TOKENS: int = 4096
 OPENAI_TIMEOUT: int = 60
 ```
 
 **Models Supported**:
-- gpt-4-turbo-preview (default)
+- gpt-4o-mini (default)
 - gpt-4
 - gpt-3.5-turbo
 
@@ -42,7 +42,7 @@ envVars:
   - key: OPENAI_ORGANIZATION
     sync: false
   - key: OPENAI_MODEL
-    value: gpt-4-turbo-preview
+    value: gpt-4o-mini
   - key: OPENAI_TEMPERATURE
     value: 0.7
   - key: OPENAI_MAX_TOKENS
@@ -391,7 +391,7 @@ All API keys must be configured in Render environment variables.
 import openai
 client = openai.OpenAI(api_key="your-api-key")
 response = client.chat.completions.create(
-    model="gpt-4-turbo-preview",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello"}]
 )
 print(response.choices[0].message.content)

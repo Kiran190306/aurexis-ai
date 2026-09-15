@@ -177,7 +177,7 @@ Comprehensive audit of the Jarvis AI project completed. The backend infrastructu
 **Status:** ✅ PASS
 
 **Providers:**
-- OpenAI: gpt-4o-mini, gpt-4-turbo-preview
+- OpenAI: gpt-4o-mini
 - Anthropic: claude-3-opus-20240229
 - Google Gemini: gemini-pro
 - Ollama: llama2 (local)
