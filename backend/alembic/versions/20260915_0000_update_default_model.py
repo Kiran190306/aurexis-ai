@@ -22,14 +22,19 @@ def upgrade() -> None:
         "UPDATE conversations SET model = 'gpt-4o-mini' WHERE model = 'gpt-4-turbo-preview'"
     )
 
-    # Update default model in users table
+    # Update default model in user_settings table (users table does not have default_model)
     op.execute(
-        "UPDATE users SET default_model = 'gpt-4o-mini' WHERE default_model = 'gpt-4-turbo-preview'"
+        "UPDATE user_settings SET default_model = 'gpt-4o-mini' WHERE default_model = 'gpt-4-turbo-preview'"
     )
 
     # Update default model in agents table
     op.execute(
         "UPDATE agents SET model = 'gpt-4o-mini' WHERE model = 'gpt-4-turbo-preview'"
+    )
+
+    # Update default model in prompt_templates table
+    op.execute(
+        "UPDATE prompt_templates SET default_model = 'gpt-4o-mini' WHERE default_model = 'gpt-4-turbo-preview'"
     )
 
 
@@ -40,9 +45,13 @@ def downgrade() -> None:
     )
 
     op.execute(
-        "UPDATE users SET default_model = 'gpt-4-turbo-preview' WHERE default_model = 'gpt-4o-mini'"
+        "UPDATE user_settings SET default_model = 'gpt-4-turbo-preview' WHERE default_model = 'gpt-4o-mini'"
     )
 
     op.execute(
         "UPDATE agents SET model = 'gpt-4-turbo-preview' WHERE model = 'gpt-4o-mini'"
+    )
+
+    op.execute(
+        "UPDATE prompt_templates SET default_model = 'gpt-4-turbo-preview' WHERE default_model = 'gpt-4o-mini'"
     )

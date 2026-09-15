@@ -108,9 +108,9 @@ class PromptTemplate(Base):
     variables = Column(JSON)  # Array of variable definitions
     
     # Configuration
-    default_model = Column(String(50), nullable=True)
-    default_temperature = Column(Integer, nullable=True)
-    default_max_tokens = Column(Integer, nullable=True)
+    default_model = Column(String(50), default="gpt-4o-mini")
+    default_temperature = Column(Integer, default=70)
+    default_max_tokens = Column(Integer, default=4096)
     
     # Metadata
     tags = Column(JSON)
